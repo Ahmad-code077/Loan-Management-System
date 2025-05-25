@@ -29,7 +29,9 @@ export default function LoginForm() {
     try {
       const result = await login(data);
       console.log('result at login ', result);
-      if (result) {
+
+      // Check if login was successful
+      if (result.data) {
         toast({
           title: 'Welcome back! 👋',
           description: 'Successfully logged into your account',
@@ -37,16 +39,24 @@ export default function LoginForm() {
         });
         router.push('/dashboard');
       }
+      // Handle case where result has error
+      else if (result.error) {
+        toast({
+          title: 'Login failed',
+          description:
+            result.error?.data?.error || 'Please check your credentials',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.log('error at login ', error);
       toast({
         title: 'Login failed',
-        description: error.data?.error || 'Please check your credentials',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
     }
   };
-
   return (
     <AuthLayout
       title={

@@ -5,7 +5,6 @@ const baseQuery = fetchBaseQuery({
   credentials: 'include',
   prepareHeaders: (headers) => {
     headers.set('Content-Type', 'application/json');
-    // Add other headers if needed
     return headers;
   },
 
@@ -19,7 +18,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
   // If we get 401, try to refresh token
-  if (result.error && result.error.status === 401) {
+  if (result.error && result.error.status === 419) {
     console.log('Access token expired, trying to refresh...');
 
     // Try to refresh token

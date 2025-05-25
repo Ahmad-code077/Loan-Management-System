@@ -16,17 +16,11 @@ import { useRegisterMutation } from '@/lib/store/authApi';
 // Define the registration schema with Zod
 const registerSchema = z
   .object({
-    username: z
-      .string()
-      .min(3, 'Username must be at least 3 characters')
-      .regex(
-        /^[a-zA-Z0-9._-]+$/,
-        'Username can only contain letters, numbers, and ._-'
-      ),
+    username: z.string().min(3, 'Username must be at least 3 characters'),
     email: z.string().email('Please enter a valid email address'),
     first_name: z.string().min(1, 'First name is required'),
     last_name: z.string().min(1, 'Last name is required'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string().min(6, 'Password must be at least 8 characters'),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {

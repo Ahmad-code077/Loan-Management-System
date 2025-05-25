@@ -11,30 +11,49 @@ export function middleware(request) {
     path.startsWith('/reset-password/') ||
     path.startsWith('/api/token');
 
-  const token = request.cookies;
-  console.log('toekeekdjfladfjlksfjl', token);
+  // Get all cookies
+  const allCookies = request.cookies.getAll();
+  console.log('All cookies:', allCookies);
 
-  // // Allow API routes to pass through
-  // if (path.startsWith('/api/')) {
-  //   return NextResponse.next();
-  // }
+  // Check for authentication tokens with exact names from your backend
+  const accessToken = request.cookies.get('access_token')?.value;
+  const refreshToken = request.cookies.get('refresh_token')?.value;
+  const sessionId = request.cookies.get('sessionid')?.value;
 
-  // // Redirect to dashboard if user is authenticated and trying to access auth pages
-  // if (isPublicPath && token) {
-  //   return NextResponse.redirect(new URL('/dashboard', request.url));
-  // }
+  // User is authenticated if any of these tokens exist
+  const isAuthenticated = !!(accessToken || refreshToken || sessionId);
 
-  // // Redirect to login if user is not authenticated and trying to access protected pages
-  // if (!isPublicPath && !token) {
-  //   const loginUrl = new URL('/login', request.url);
-  //   loginUrl.searchParams.set('from', path);
-  //   return NextResponse.redirect(loginUrl);
-  // }
+  console.log('Authentication check:', {
+    path,
+    isAuthenticated,
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+    hasSessionId: !!sessionId,
+    cookieCount: allCookies.length,
+  });
+
+  // Allow API routes to pass through
+  if (path.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
+  // Redirect to dashboard if user is authenticated and trying to access auth pages
+  if (isPublicPath && isAuthenticated) {
+    console.log('Redirecting authenticated user to dashboard');
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // Redirect to login if user is not authenticated and trying to access protected pages
+  if (!isPublicPath && !isAuthenticated) {
+    console.log('Redirecting unauthenticated user to login');
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', path);
+    return NextResponse.redirect(loginUrl);
+  }
 
   return NextResponse.next();
 }
 
-// Configure which routes to run middleware on
 export const config = {
   matcher: [
     '/',
@@ -46,5 +65,6 @@ export const config = {
     '/upload-document/:path*',
     '/forgot-password',
     '/reset-password/:path*',
+    '/admin-dashboard/:path*',
   ],
 };
