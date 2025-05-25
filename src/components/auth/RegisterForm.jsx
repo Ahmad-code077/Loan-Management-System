@@ -26,12 +26,7 @@ const registerSchema = z
     email: z.string().email('Please enter a valid email address'),
     first_name: z.string().min(1, 'First name is required'),
     last_name: z.string().min(1, 'Last name is required'),
-    password: z
-      .string()
-      .min(8, 'Password must be at least 8 characters')
-      .refine((value) => !/^\d+$/.test(value), {
-        message: 'Password cannot be entirely numeric',
-      }),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
     confirm_password: z.string(),
   })
   .refine((data) => data.password === data.confirm_password, {
@@ -65,6 +60,7 @@ export default function RegisterForm() {
     try {
       const result = await register(data).unwrap();
 
+      console.log('result at register ', result);
       // Show success toast
       toast({
         title: 'Registration Successful',

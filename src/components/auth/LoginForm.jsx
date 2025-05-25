@@ -27,7 +27,8 @@ export default function LoginForm() {
 
   const onSubmit = async (data) => {
     try {
-      const result = await login(data).unwrap();
+      const result = await login(data);
+      console.log('result at login ', result);
       if (result) {
         toast({
           title: 'Welcome back! 👋',
@@ -37,9 +38,10 @@ export default function LoginForm() {
         router.push('/dashboard');
       }
     } catch (error) {
+      console.log('error at login ', error);
       toast({
         title: 'Login failed',
-        description: error.data?.detail || 'Please check your credentials',
+        description: error.data?.error || 'Please check your credentials',
         variant: 'destructive',
       });
     }
