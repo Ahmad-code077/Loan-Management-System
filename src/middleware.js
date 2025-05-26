@@ -38,18 +38,18 @@ export function middleware(request) {
   }
 
   // Redirect to dashboard if user is authenticated and trying to access auth pages
-  if (isPublicPath && isAuthenticated) {
-    console.log('Redirecting authenticated user to dashboard');
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  // if (isPublicPath && isAuthenticated) {
+  //   console.log('Redirecting authenticated user to dashboard');
+  //   return NextResponse.redirect(new URL('/dashboard', request.url));
+  // }
 
   // Redirect to login if user is not authenticated and trying to access protected pages
-  if (!isPublicPath && !isAuthenticated) {
-    console.log('Redirecting unauthenticated user to login');
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', path);
-    return NextResponse.redirect(loginUrl);
-  }
+  // if (!isPublicPath && !isAuthenticated) {
+  //   console.log('Redirecting unauthenticated user to login');
+  //   const loginUrl = new URL('/login', request.url);
+  //   loginUrl.searchParams.set('from', path);
+  //   return NextResponse.redirect(loginUrl);
+  // }
 
   return NextResponse.next();
 }

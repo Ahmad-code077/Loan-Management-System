@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+      "@/*": ["src/*"]
+    },
+    "checkJs": true, // ✅ Enables type-checking for .js/.jsx files
+    "jsx": "preserve"
+  },
+  "include": ["src"]
 }
