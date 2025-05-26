@@ -1,8 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FiDollarSign, FiCalendar, FiX } from 'react-icons/fi';
-import { formatCurrency, getLoanTypeName } from '../../utils/loanUtils';
+import {
+  formatCurrency,
+  getLoanTypeName,
+  formatLoanTypeName,
+  getLoanTypeInterestRate,
+} from '../../utils/loanUtils';
 
-export default function LoanDetailsCard({ loan }) {
+export default function LoanDetailsCard({ loan, loanTypes }) {
+  const loanTypeName = formatLoanTypeName(
+    getLoanTypeName(loan.loan_type, loanTypes)
+  );
+  const expectedInterestRate = getLoanTypeInterestRate(
+    loan.loan_type,
+    loanTypes
+  );
+
   return (
     <Card className='border border-border bg-card'>
       <CardHeader>
@@ -27,6 +40,11 @@ export default function LoanDetailsCard({ loan }) {
             </label>
             <p className='text-3xl font-bold text-orange-600'>
               {loan.interest}%
+              {loan.interest !== expectedInterestRate && (
+                <span className='text-sm text-muted-foreground ml-2'>
+                  (Expected: {expectedInterestRate}%)
+                </span>
+              )}
             </p>
           </div>
           <div className='space-y-1'>
@@ -42,9 +60,7 @@ export default function LoanDetailsCard({ loan }) {
             <label className='text-sm font-medium text-muted-foreground'>
               Loan Type
             </label>
-            <p className='text-lg text-card-foreground'>
-              {getLoanTypeName(loan.loan_type)}
-            </p>
+            <p className='text-lg text-card-foreground'>{loanTypeName}</p>
           </div>
           <div className='space-y-1'>
             <label className='text-sm font-medium text-muted-foreground'>

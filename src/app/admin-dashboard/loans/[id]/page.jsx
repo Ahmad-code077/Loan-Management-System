@@ -12,12 +12,17 @@ import QuickActionsCard from './components/QuickActionsCard';
 import ApprovalModal from '../ApprovalModal';
 import { RejectModal } from '../RejectModal';
 import { mockLoans } from '../data/mockData';
+import { createLoanTypesHook } from '../utils/loanUtils';
 
 export default function LoanDetailPage() {
   const { id } = useParams();
   const [loan, setLoan] = useState(null);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+
+  // Get loan types (will be replaced with API hook later)
+  const { data: loanTypes } = createLoanTypesHook();
+  console.log('data', loanTypes);
 
   useEffect(() => {
     const loanData = mockLoans.find((l) => l.id === parseInt(id));
@@ -53,6 +58,7 @@ export default function LoanDetailPage() {
     <div className='space-y-6'>
       <LoanDetailHeader
         loan={loan}
+        loanTypes={loanTypes}
         onApprove={() => setShowApprovalModal(true)}
         onReject={() => setShowRejectModal(true)}
       />
@@ -61,11 +67,11 @@ export default function LoanDetailPage() {
         <div className='lg:col-span-2 space-y-6'>
           <PersonalInformationCard loan={loan} />
           <EmploymentInformationCard loan={loan} />
-          <LoanDetailsCard loan={loan} />
+          <LoanDetailsCard loan={loan} loanTypes={loanTypes} />
         </div>
 
         <div className='space-y-6'>
-          <ApplicationSummaryCard loan={loan} />
+          <ApplicationSummaryCard loan={loan} loanTypes={loanTypes} />
           <FinancialOverviewCard loan={loan} />
           <QuickActionsCard
             loan={loan}

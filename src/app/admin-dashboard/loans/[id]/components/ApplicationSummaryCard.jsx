@@ -1,9 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FiFileText } from 'react-icons/fi';
-import { getStatusColor, getLoanTypeName } from '../../utils/loanUtils';
+import {
+  getStatusColor,
+  getLoanTypeName,
+  formatLoanTypeName,
+} from '../../utils/loanUtils';
 
-export default function ApplicationSummaryCard({ loan }) {
+export default function ApplicationSummaryCard({ loan, loanTypes }) {
+  const loanTypeName = formatLoanTypeName(
+    getLoanTypeName(loan.loan_type, loanTypes)
+  );
+
   return (
     <Card className='border border-border bg-card'>
       <CardHeader>
@@ -29,7 +37,7 @@ export default function ApplicationSummaryCard({ loan }) {
           <div className='flex justify-between items-center'>
             <span className='text-muted-foreground'>Loan Type:</span>
             <span className='font-semibold text-card-foreground'>
-              {getLoanTypeName(loan.loan_type)}
+              {loanTypeName}
             </span>
           </div>
           <div className='flex justify-between items-center'>
