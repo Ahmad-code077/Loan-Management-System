@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   FiUsers,
@@ -15,6 +16,7 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLogoutMutation } from '@/lib/store/authApi';
+import { authUtils } from '@/lib/auth/authUtils';
 
 const sidebarItems = [
   { href: '/admin-dashboard', icon: FiHome, label: 'Dashboard' },
@@ -30,8 +32,69 @@ const sidebarItems = [
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { logout, loading } = useLogoutMutation();
+  const [currentUser, setCurrentUser] = useState(null);
+  const [logout, { isLoading: logoutLoading }] = useLogoutMutation();
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Get current user and handle auth refresh events
+  useEffect(() => {
+    const updateCurrentUser = () => {
+      const user = authUtils.getCurrentUser();
+      setCurrentUser(user);
+    };
+
+    // Initial load
+    updateCurrentUser();
+
+    // Listen for auth refresh events
+    const handleAuthRefresh = () => {
+      updateCurrentUser();
+    };
+
+    window.addEventListener('auth-refresh', handleAuthRefresh);
+
+    return () => {
+      window.removeEventListener('auth-refresh', handleAuthRefresh);
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      router.push('/login');
+    } catch (error) {
+      // Even if logout API fails, clear local data and redirect
+      authUtils.clearAuth();
+      router.push('/login');
+    }
+  };
+
+  // Get user display info with fallbacks
+  const getUserDisplayInfo = () => {
+    if (currentUser) {
+      return {
+        name: currentUser.username || currentUser.email || 'Admin',
+        email: currentUser.email || 'No email provided',
+        initial: (currentUser.username || currentUser.email || 'A')
+          .charAt(0)
+          .toUpperCase(),
+        id: currentUser.id || 'N/A',
+        isSuper: currentUser.is_superuser || false,
+      };
+    }
+
+    // Fallback for when user data is temporarily unavailable
+    return {
+      name: 'Admin',
+      email: 'Loading...',
+      initial: 'A',
+      id: 'N/A',
+      isSuper: true,
+    };
+  };
+
+  const userInfo = getUserDisplayInfo();
 
   return (
     <div className='flex h-screen bg-background'>
@@ -57,8 +120,39 @@ export default function AdminLayout({ children }) {
           </button>
         </div>
 
+        {/* User Info Section */}
+        <div className='px-6 py-4 border-b border-sidebar-border bg-gradient-to-r from-primary/5 to-primary/10'>
+          <div className='flex items-center gap-3'>
+            <div className='w-10 h-10 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center'>
+              <span className='text-sm font-bold text-primary-foreground'>
+                {userInfo.initial}
+              </span>
+            </div>
+            <div className='flex-1 min-w-0'>
+              <h3 className='text-sm font-medium text-sidebar-foreground truncate'>
+                {userInfo.name}
+              </h3>
+              <p className='text-xs text-sidebar-foreground/70 truncate'>
+                {userInfo.email}
+              </p>
+              {currentUser && (
+                <div className='flex items-center gap-2 mt-1'>
+                  <span className='text-xs text-sidebar-foreground/50'>
+                    ID: {userInfo.id}
+                  </span>
+                  {userInfo.isSuper && (
+                    <span className='text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-medium'>
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Navigation */}
-        <nav className='mt-6 px-3'>
+        <nav className='mt-6 px-3 flex-1'>
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -106,11 +200,13 @@ export default function AdminLayout({ children }) {
         {/* Logout Button */}
         <div className='absolute bottom-0 w-full p-6'>
           <Button
+            onClick={handleLogout}
+            disabled={logoutLoading}
             variant='outline'
-            className='w-full border-sidebar-border text-sidebar-foreground hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5 hover:border-destructive/20 hover:text-destructive transition-all duration-300 group'
+            className='w-full border-sidebar-border text-sidebar-foreground hover:bg-gradient-to-r hover:from-destructive/10 hover:to-destructive/5 hover:border-destructive/20 hover:text-destructive transition-all duration-300 group disabled:opacity-50'
           >
             <FiLogOut className='w-4 h-4 mr-2 group-hover:animate-pulse' />
-            Logout
+            {logoutLoading ? 'Logging out...' : 'Logout'}
           </Button>
         </div>
       </div>
@@ -131,10 +227,19 @@ export default function AdminLayout({ children }) {
             <div className='flex items-center gap-2'>
               <div className='w-8 h-8 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center'>
                 <span className='text-xs font-bold text-primary-foreground'>
-                  A
+                  {userInfo.initial}
                 </span>
               </div>
-              <span className='text-sm font-medium text-foreground'>Admin</span>
+              <div className='flex flex-col'>
+                <span className='text-sm font-medium text-foreground'>
+                  {userInfo.name}
+                </span>
+                {currentUser && (
+                  <span className='text-xs text-muted-foreground'>
+                    {userInfo.isSuper ? 'Administrator' : 'User'}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </header>

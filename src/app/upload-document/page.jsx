@@ -7,14 +7,6 @@ import { Card } from '@/components/ui/card';
 
 export default function UploadDocumentPage() {
   const router = useRouter();
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-    }
-  }, [router]);
-
   return (
     <main className='min-h-screen bg-gray-50 py-8'>
       <div className='container mx-auto px-4'>

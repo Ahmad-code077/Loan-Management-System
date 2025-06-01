@@ -6,10 +6,6 @@ import { useRouter } from 'next/navigation';
 
 export default function DashboardHeader({ profile }) {
   const router = useRouter();
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    router.push('/login');
-  };
 
   return (
     <header className='bg-white shadow'>
@@ -37,10 +33,6 @@ export default function DashboardHeader({ profile }) {
 
             <Button variant='ghost' onClick={() => router.push('/profile')}>
               Profile
-            </Button>
-
-            <Button variant='destructive' onClick={handleLogout}>
-              Logout
             </Button>
           </div>
         </div>
