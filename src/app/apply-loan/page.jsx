@@ -9,37 +9,6 @@ export default function ApplyLoanPage() {
   const router = useRouter();
   const [loanTypes, setLoanTypes] = useState([]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.push('/login');
-      return;
-    }
-
-    // Fetch loan types
-    const fetchLoanTypes = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/loan-types/`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setLoanTypes(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch loan types:', error);
-      }
-    };
-
-    fetchLoanTypes();
-  }, [router]);
-
   return (
     <main className='min-h-screen bg-gray-50 py-8'>
       <div className='container mx-auto px-4'>

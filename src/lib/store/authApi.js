@@ -1,129 +1,248 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { Mutex } from 'async-mutex';
+import { endpoints } from './endpoints';
 
-const baseQuery = fetchBaseQuery({
+const mutex = new Mutex();
+
+// Helper function to decode and analyze JWT
+const analyzeToken = (token) => {
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    const isExpired = payload.exp < currentTime;
+    const timeUntilExpiry = payload.exp - currentTime;
+
+    return { payload, isExpired, timeUntilExpiry };
+  } catch (error) {
+    return null;
+  }
+};
+
+const rawBaseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL,
-  credentials: 'include',
   prepareHeaders: (headers) => {
-    headers.set('Content-Type', 'application/json');
-    return headers;
-  },
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('access_token')
+        : null;
 
-  headers: {
-    'Content-Type': 'application/json',
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    headers.set('Content-Type', 'application/json');
+    headers.set('Accept', 'application/json');
+
+    return headers;
   },
 });
 
-// Base query with automatic token refresh
+// const baseQueryWithReauth = async (args, api, extraOptions) => {
+//   await mutex.waitForUnlock();
+//   let result = await rawBaseQuery(args, api, extraOptions);
+
+//   // Check if we need to refresh the token
+//   if (
+//     result.error &&
+//     (result.error.status === 401 || result.error.status === 419)
+//   ) {
+//     if (!mutex.isLocked()) {
+//       const release = await mutex.acquire();
+
+//       try {
+//         const refreshToken =
+//           typeof window !== 'undefined'
+//             ? localStorage.getItem('refresh_token')
+//             : null;
+
+//         if (!refreshToken) {
+//           clearAuthData();
+//           return result;
+//         }
+
+//         // Analyze refresh token before using it
+//         const refreshAnalysis = analyzeToken(refreshToken);
+
+//         if (!refreshAnalysis) {
+//           clearAuthData();
+//           return result;
+//         }
+
+//         if (refreshAnalysis.isExpired) {
+//           clearAuthData();
+//           return result;
+//         }
+
+//         // Create refresh request payload
+//         const refreshRequestPayload = {
+//           url: '/api/token/refresh/',
+//           method: 'POST',
+//           body: { refresh: refreshToken },
+//         };
+
+//         // Create a custom query for refresh that doesn't include Authorization header
+//         const refreshQuery = fetchBaseQuery({
+//           baseUrl: process.env.NEXT_PUBLIC_API_URL,
+//           prepareHeaders: (headers) => {
+//             headers.set('Content-Type', 'application/json');
+//             headers.set('Accept', 'application/json');
+//             return headers;
+//           },
+//         });
+
+//         const refreshResult = await refreshQuery(
+//           refreshRequestPayload,
+//           api,
+//           extraOptions
+//         );
+
+//         if (refreshResult.data && refreshResult.data.access) {
+//           // Store new tokens
+//           localStorage.setItem('access_token', refreshResult.data.access);
+//           if (refreshResult.data.refresh) {
+//             localStorage.setItem('refresh_token', refreshResult.data.refresh);
+//           }
+
+//           // Trigger auth status update
+//           window.dispatchEvent(new Event('auth-refresh'));
+
+//           // Retry original request
+//           result = await rawBaseQuery(args, api, extraOptions);
+//         } else {
+//           // Clear auth data if refresh failed
+//           clearAuthData();
+//         }
+//       } catch (error) {
+//         clearAuthData();
+//       } finally {
+//         release();
+//       }
+//     } else {
+//       await mutex.waitForUnlock();
+//       result = await rawBaseQuery(args, api, extraOptions);
+//     }
+//   }
+
+//   return result;
+// };
+
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  await mutex.waitForUnlock();
+  let result = await rawBaseQuery(args, api, extraOptions);
 
-  // If we get 401, try to refresh token
-  if (result.error && result.error.status === 419) {
-    console.log('Access token expired, trying to refresh...');
+  // Check if we need to refresh the token
+  if (
+    result.error &&
+    (result.error.status === 401 || result.error.status === 419)
+  ) {
+    if (!mutex.isLocked()) {
+      const release = await mutex.acquire();
 
-    // Try to refresh token
-    const refreshResult = await baseQuery(
-      { url: '/api/token/refresh/', method: 'POST' },
-      api,
-      extraOptions
-    );
+      try {
+        const refreshToken =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('refresh_token')
+            : null;
 
-    if (refreshResult.data) {
-      console.log('Token refreshed successfully');
-      // Refresh successful, retry original request
-      result = await baseQuery(args, api, extraOptions);
-    } else {
-      console.log('Token refresh failed');
-      // Refresh failed - user needs to login again
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        if (!refreshToken) {
+          clearAuthData();
+          return result;
+        }
+
+        // Analyze refresh token before using it
+        const refreshAnalysis = analyzeToken(refreshToken);
+
+        if (!refreshAnalysis) {
+          clearAuthData();
+          return result;
+        }
+
+        if (refreshAnalysis.isExpired) {
+          clearAuthData();
+          return result;
+        }
+
+        // 🔍 PRESERVE USER DATA BEFORE REFRESH
+        const existingUserData = localStorage.getItem('user_data');
+
+        // Create refresh request payload
+        const refreshRequestPayload = {
+          url: '/api/token/refresh/',
+          method: 'POST',
+          body: { refresh: refreshToken },
+        };
+
+        // Create a custom query for refresh that doesn't include Authorization header
+        const refreshQuery = fetchBaseQuery({
+          baseUrl: process.env.NEXT_PUBLIC_API_URL,
+          prepareHeaders: (headers) => {
+            headers.set('Content-Type', 'application/json');
+            headers.set('Accept', 'application/json');
+            return headers;
+          },
+        });
+
+        const refreshResult = await refreshQuery(
+          refreshRequestPayload,
+          api,
+          extraOptions
+        );
+
+        if (refreshResult.data && refreshResult.data.access) {
+          // Store new tokens
+          localStorage.setItem('access_token', refreshResult.data.access);
+          if (refreshResult.data.refresh) {
+            localStorage.setItem('refresh_token', refreshResult.data.refresh);
+          }
+
+          // 🔧 RESTORE USER DATA AFTER TOKEN REFRESH
+          if (existingUserData) {
+            localStorage.setItem('user_data', existingUserData);
+          }
+
+          // Trigger auth status update
+          window.dispatchEvent(new Event('auth-refresh'));
+
+          // Retry original request
+          result = await rawBaseQuery(args, api, extraOptions);
+        } else {
+          // Clear auth data if refresh failed
+          clearAuthData();
+        }
+      } catch (error) {
+        clearAuthData();
+      } finally {
+        release();
       }
+    } else {
+      await mutex.waitForUnlock();
+      result = await rawBaseQuery(args, api, extraOptions);
     }
   }
 
   return result;
 };
+const clearAuthData = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: 'access_token',
+        newValue: null,
+      })
+    );
+  }
+};
 
 export const authApi = createApi({
   reducerPath: 'authApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['User'],
-  endpoints: (builder) => ({
-    login: builder.mutation({
-      query: (credentials) => ({
-        url: '/api/token/',
-        method: 'POST',
-        body: credentials,
-        credentials: 'include', // Ensure this is here
-      }),
-    }),
-
-    register: builder.mutation({
-      query: (userData) => ({
-        url: '/register/',
-        method: 'POST',
-        body: userData,
-      }),
-    }),
-    logout: builder.mutation({
-      query: () => ({
-        url: '/api/logout/',
-        method: 'POST',
-      }),
-    }),
-
-    getProfile: builder.query({
-      query: () => '/api/profile/',
-      providesTags: ['User'],
-    }),
-
-    // Add your other endpoints here
-    getUsers: builder.query({
-      query: () => '/api/admin/users/',
-    }),
-
-    getLoans: builder.query({
-      query: () => '/api/admin/loan-list/',
-    }),
-
-    getLoanDetails: builder.query({
-      query: (id) => `/api/admin/loan/${id}/`,
-    }),
-
-    approveLoan: builder.mutation({
-      query: (id) => ({
-        url: `/api/admin/approve-loan/${id}/`,
-        method: 'POST',
-      }),
-    }),
-
-    rejectLoan: builder.mutation({
-      query: (id) => ({
-        url: `/api/admin/reject-loan/${id}/`,
-        method: 'POST',
-      }),
-    }),
-
-    getDocuments: builder.query({
-      query: () => '/api/admin/documents/',
-    }),
-
-    getDocumentDetails: builder.query({
-      query: (id) => `/api/admin/document/${id}/`,
-    }),
-
-    addLoanType: builder.mutation({
-      query: (loanType) => ({
-        url: '/api/admin/loan-types/',
-        method: 'POST',
-        body: loanType,
-      }),
-    }),
-
-    getLoanTypes: builder.query({
-      query: () => '/api/admin/loan-types/',
-    }),
-  }),
+  tagTypes: ['User', 'Loan', 'Document', 'LoanType'],
+  endpoints,
 });
 
 export const {
@@ -140,4 +259,6 @@ export const {
   useGetDocumentDetailsQuery,
   useAddLoanTypeMutation,
   useGetLoanTypesQuery,
+  useUpdateLoanTypeMutation,
+  useDeleteLoanTypeMutation,
 } = authApi;

@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useLogoutMutation } from '@/lib/store/authApi';
 
 const sidebarItems = [
   { href: '/admin-dashboard', icon: FiHome, label: 'Dashboard' },
@@ -29,6 +30,7 @@ const sidebarItems = [
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout, loading } = useLogoutMutation();
   const pathname = usePathname();
 
   return (
