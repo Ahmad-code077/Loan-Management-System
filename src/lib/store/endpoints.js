@@ -141,4 +141,12 @@ export const endpoints = (builder) => ({
     }),
     invalidatesTags: ['LoanType'],
   }),
+  applyLoan: builder.mutation({
+    query: (loanData) => ({
+      url: '/apply-loan/',
+      method: 'POST',
+      body: loanData,
+    }),
+    invalidatesTags: ['Loan'],
+  }),
 });
