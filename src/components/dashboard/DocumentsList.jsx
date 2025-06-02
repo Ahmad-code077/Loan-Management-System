@@ -3,52 +3,115 @@
 import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useGetUserDocumentsQuery } from '@/lib/store/authApi';
+import {
+  FiFileText,
+  FiImage,
+  FiFile,
+  FiCheck,
+  FiClock,
+  FiAlertCircle,
+  FiEye,
+} from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function DocumentsList() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [documents] = useState([
-    {
-      id: 1,
-      title: 'Income Statement',
-      file_url: '#',
-      uploaded_at: '2025-05-01',
-      type: 'pdf',
-    },
-    {
-      id: 2,
-      title: 'Bank Statement',
-      file_url: '#',
-      uploaded_at: '2025-05-15',
-      type: 'pdf',
-    },
-    {
-      id: 3,
-      title: 'ID Proof',
-      file_url: '#',
-      uploaded_at: '2025-05-10',
-      type: 'image',
-    },
-  ]);
+  const {
+    data: documents = [],
+    isLoading,
+    error,
+    refetch,
+  } = useGetUserDocumentsQuery();
 
-  useEffect(() => {
-    // Simulate loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+  // Get document type icon
+  const getDocumentIcon = (documentType) => {
+    switch (documentType) {
+      case 'cnic_front':
+      case 'cnic_back':
+        return <FiFileText className='w-4 h-4 text-blue-600' />;
+      case 'salary_slip':
+        return <FiFile className='w-4 h-4 text-green-600' />;
+      default:
+        return <FiFile className='w-4 h-4 text-gray-600' />;
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Get document type label
+  const getDocumentTypeLabel = (documentType) => {
+    switch (documentType) {
+      case 'cnic_front':
+        return 'CNIC Front';
+      case 'cnic_back':
+        return 'CNIC Back';
+      case 'salary_slip':
+        return 'Salary Slip';
+      default:
+        return documentType;
+    }
+  };
+
+  // Get verification status
+  const getVerificationStatus = (isVerified) => {
+    if (isVerified) {
+      return (
+        <Badge className='bg-green-100 text-green-800 border-green-200'>
+          <FiCheck className='w-3 h-3 mr-1' />
+          Verified
+        </Badge>
+      );
+    }
+    return (
+      <Badge className='bg-yellow-100 text-yellow-800 border-yellow-200'>
+        <FiClock className='w-3 h-3 mr-1' />
+        Pending
+      </Badge>
+    );
+  };
+
+  // Handle file viewing
+  const handleViewDocument = (fileUrl) => {
+    window.open(fileUrl, '_blank');
+  };
 
   if (isLoading) {
     return (
-      <div className='text-center text-gray-500'>Loading documents...</div>
+      <div className='text-center py-6'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+        <div className='text-muted-foreground'>Loading your documents...</div>
+      </div>
     );
   }
 
-  if (documents.length === 0) {
+  if (error) {
     return (
-      <div className='text-center text-gray-500'>
-        No documents found. Upload documents to get started!
+      <div className='text-center py-6'>
+        <div className='flex items-center justify-center gap-2 text-red-600 mb-2'>
+          <FiAlertCircle className='w-5 h-5' />
+          <span>Failed to load documents</span>
+        </div>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={() => refetch()}
+          className='mt-2'
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!documents || documents.length === 0) {
+    return (
+      <div className='text-center py-6'>
+        <FiFileText className='w-12 h-12 text-gray-400 mx-auto mb-3' />
+        <div className='text-muted-foreground mb-3'>
+          No documents uploaded yet
+        </div>
+        <Link href='/upload-document'>
+          <Button size='sm'>Upload Documents</Button>
+        </Link>
       </div>
     );
   }
@@ -56,55 +119,100 @@ export default function DocumentsList() {
   return (
     <div className='space-y-4'>
       {documents.map((doc) => (
-        <Card key={doc.id} className='p-4 hover:shadow-lg transition-shadow'>
-          <div className='flex justify-between items-center'>
-            <div>
-              <h3 className='font-semibold flex items-center gap-2'>
-                {doc.type === 'pdf' ? (
-                  <svg
-                    className='w-4 h-4'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z'
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    className='w-4 h-4'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'
-                    />
-                  </svg>
+        <Card
+          key={doc.id}
+          className='p-4 hover:shadow-lg transition-shadow border border-border'
+        >
+          <div className='flex justify-between items-start'>
+            <div className='flex-1'>
+              <div className='flex items-center gap-3 mb-2'>
+                {getDocumentIcon(doc.document_type)}
+                <div>
+                  <h3 className='font-semibold text-card-foreground'>
+                    {getDocumentTypeLabel(doc.document_type)}
+                  </h3>
+                  <p className='text-sm text-muted-foreground'>
+                    Document ID: #{doc.id}
+                  </p>
+                </div>
+              </div>
+
+              <div className='flex items-center gap-3 text-sm text-muted-foreground mb-2'>
+                <span>
+                  Uploaded:{' '}
+                  {new Date(doc.uploaded_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+                <span>•</span>
+                <span>
+                  {new Date(doc.uploaded_at).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+
+              <div className='flex items-center gap-2'>
+                {getVerificationStatus(doc.is_verified)}
+                {doc.file && (
+                  <Badge variant='outline' className='text-xs'>
+                    {doc.file.split('.').pop()?.toUpperCase() || 'FILE'}
+                  </Badge>
                 )}
-                {doc.title}
-              </h3>
-              <p className='text-sm text-gray-600'>
-                Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
-              </p>
+              </div>
             </div>
-            <Button
-              variant='outline'
-              size='sm'
-              className='text-blue-600 hover:text-blue-800'
-            >
-              View
-            </Button>
+
+            <div className='flex flex-col gap-2 ml-4'>
+              {doc.file && (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => handleViewDocument(doc.file)}
+                  className='text-blue-600 hover:text-blue-800 border-blue-200 hover:bg-blue-50'
+                >
+                  <FiEye className='w-4 h-4 mr-1' />
+                  View
+                </Button>
+              )}
+
+              {!doc.is_verified && (
+                <Link href='/upload-document'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='text-orange-600 hover:text-orange-800 hover:bg-orange-50'
+                  >
+                    Update
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
+
+          {/* Additional document info */}
+          {doc.file && (
+            <div className='mt-3 pt-3 border-t border-border'>
+              <div className='text-xs text-muted-foreground'>
+                <span className='font-medium'>File:</span>{' '}
+                {doc.file.split('/').pop()}
+              </div>
+            </div>
+          )}
         </Card>
       ))}
+
+      {/* Add upload button at the bottom */}
+      <div className='pt-4 border-t border-border'>
+        <Link href='/upload-document'>
+          <Button variant='outline' className='w-full'>
+            <FiFileText className='w-4 h-4 mr-2' />
+            Upload More Documents
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

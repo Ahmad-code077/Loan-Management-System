@@ -149,4 +149,70 @@ export const endpoints = (builder) => ({
     }),
     invalidatesTags: ['Loan'],
   }),
+  uploadDocument: builder.mutation({
+    query: (documentData) => {
+      const formData = new FormData();
+      formData.append('document_type', documentData.document_type);
+      formData.append('file', documentData.file);
+
+      return {
+        url: '/upload-document/',
+        method: 'POST',
+        body: formData,
+        // Don't set Content-Type, let the browser set it for FormData
+        prepareHeaders: (headers) => {
+          // Remove Content-Type to let browser set it with boundary for multipart/form-data
+          headers.delete('Content-Type');
+          return headers;
+        },
+      };
+    },
+    invalidatesTags: ['Document'],
+  }),
+
+  getUserDocuments: builder.query({
+    query: () => '/user-documents/',
+    providesTags: ['Document'],
+  }),
+
+  uploadDocument: builder.mutation({
+    query: (documentData) => {
+      const formData = new FormData();
+      formData.append('document_type', documentData.document_type);
+      formData.append('file', documentData.file);
+
+      return {
+        url: '/upload-document/',
+        method: 'POST',
+        body: formData,
+        // Don't set any headers for FormData - let the browser handle it
+      };
+    },
+    invalidatesTags: ['Document'],
+  }),
+
+  // Fixed endpoint name
+  getUserDocuments: builder.query({
+    query: () => '/my-documents/',
+    providesTags: ['Document'],
+  }),
+
+  updateDocument: builder.mutation({
+    query: ({ id, documentData }) => {
+      const formData = new FormData();
+      formData.append('document_type', documentData.document_type);
+      formData.append('file', documentData.file);
+
+      return {
+        url: `/update-document/${id}/`,
+        method: 'PUT',
+        body: formData,
+      };
+    },
+    invalidatesTags: ['Document'],
+  }),
+  getUserLoans: builder.query({
+    query: () => '/my-loans/',
+    providesTags: ['Loan'],
+  }),
 });
