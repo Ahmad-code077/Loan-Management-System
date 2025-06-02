@@ -181,8 +181,9 @@ export const {
   useUpdateLoanTypeMutation,
   useDeleteLoanTypeMutation,
   useApplyLoanMutation,
+  useGetUserLoansQuery,
+
   useUploadDocumentMutation,
   useGetUserDocumentsQuery,
   useUpdateDocumentMutation,
-  useGetUserLoansQuery,
 } = authApi;

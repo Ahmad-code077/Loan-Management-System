@@ -1,20 +1,98 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoanList from '@/components/dashboard/LoanList';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useLogoutMutation } from '@/lib/store/authApi';
+import {
+  useGetUserDocumentsQuery,
+  useGetUserLoansQuery,
+  useLogoutMutation,
+} from '@/lib/store/authApi';
 import { authUtils } from '@/lib/auth/authUtils';
-import { FiLogOut, FiUser } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiLoader } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState(null);
   const [logout, { isLoading: logoutLoading }] = useLogoutMutation();
+
+  // API queries with proper data extraction
+  const {
+    data: userLoans,
+    isLoading: loansLoading,
+    error: loansError,
+  } = useGetUserLoansQuery();
+
+  const {
+    data: userDocuments,
+    isLoading: documentsLoading,
+    error: documentsError,
+  } = useGetUserDocumentsQuery();
+
   const router = useRouter();
+
+  // Calculate loan statistics
+  const loanStats = useMemo(() => {
+    if (!userLoans || !Array.isArray(userLoans)) {
+      return {
+        totalLoans: 0,
+        activeLoans: 0,
+        pendingLoans: 0,
+        approvedLoans: 0,
+        rejectedLoans: 0,
+      };
+    }
+
+    const totalLoans = userLoans.length;
+    const activeLoans = userLoans.filter(
+      (loan) => loan.status === 'approved' || loan.status === 'active'
+    ).length;
+    const pendingLoans = userLoans.filter(
+      (loan) => loan.status === 'pending'
+    ).length;
+    const approvedLoans = userLoans.filter(
+      (loan) => loan.status === 'approved'
+    ).length;
+    const rejectedLoans = userLoans.filter(
+      (loan) => loan.status === 'rejected'
+    ).length;
+
+    return {
+      totalLoans,
+      activeLoans,
+      pendingLoans,
+      approvedLoans,
+      rejectedLoans,
+    };
+  }, [userLoans]);
+
+  // Calculate document statistics
+  const documentStats = useMemo(() => {
+    if (!userDocuments || !Array.isArray(userDocuments)) {
+      return {
+        totalDocuments: 0,
+        verifiedDocuments: 0,
+        pendingDocuments: 0,
+      };
+    }
+
+    const totalDocuments = userDocuments.length;
+    const verifiedDocuments = userDocuments.filter(
+      (doc) => doc.is_verified === true
+    ).length;
+    const pendingDocuments = userDocuments.filter(
+      (doc) => doc.is_verified === false
+    ).length;
+
+    return {
+      totalDocuments,
+      verifiedDocuments,
+      pendingDocuments,
+    };
+  }, [userDocuments]);
 
   useEffect(() => {
     // Get user data from localStorage
@@ -126,6 +204,9 @@ export default function DashboardPage() {
                 />
               </svg>
               Your Loans
+              {loansLoading && (
+                <FiLoader className='w-4 h-4 animate-spin ml-2' />
+              )}
             </h2>
             <LoanList />
           </Card>
@@ -146,6 +227,9 @@ export default function DashboardPage() {
                 />
               </svg>
               Your Documents
+              {documentsLoading && (
+                <FiLoader className='w-4 h-4 animate-spin ml-2' />
+              )}
             </h2>
             <DocumentsList />
           </Card>
@@ -193,6 +277,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
+        {/* Dynamic Statistics Overview */}
         <div className='mt-8'>
           <Card className='p-6 border border-border shadow-sm'>
             <h2 className='text-xl font-semibold mb-4 flex items-center gap-2 text-primary'>
@@ -211,19 +296,173 @@ export default function DashboardPage() {
               </svg>
               Account Overview
             </h2>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              <Card className='p-4 bg-card hover:bg-accent transition-colors'>
-                <h3 className='text-sm text-muted-foreground'>Total Loans</h3>
-                <p className='text-2xl font-bold text-primary'>3</p>
-              </Card>
-              <Card className='p-4 bg-card hover:bg-accent transition-colors'>
-                <h3 className='text-sm text-muted-foreground'>Active Loans</h3>
-                <p className='text-2xl font-bold text-primary'>1</p>
-              </Card>
-              <Card className='p-4 bg-card hover:bg-accent transition-colors'>
-                <h3 className='text-sm text-muted-foreground'>Documents</h3>
-                <p className='text-2xl font-bold text-primary'>3</p>
-              </Card>
+
+            {/* Loan Statistics */}
+            <div className='mb-6'>
+              <h3 className='text-lg font-medium text-foreground mb-3'>
+                Loan Statistics
+              </h3>
+              <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4'>
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>Total Loans</h3>
+                  <div className='flex items-center gap-2'>
+                    {loansLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-primary' />
+                    ) : (
+                      <p className='text-2xl font-bold text-primary'>
+                        {loanStats.totalLoans}
+                      </p>
+                    )}
+                  </div>
+                  {loansError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>
+                    Active Loans
+                  </h3>
+                  <div className='flex items-center gap-2'>
+                    {loansLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-green-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-green-600'>
+                        {loanStats.activeLoans}
+                      </p>
+                    )}
+                  </div>
+                  {loansError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>Pending</h3>
+                  <div className='flex items-center gap-2'>
+                    {loansLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-yellow-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-yellow-600'>
+                        {loanStats.pendingLoans}
+                      </p>
+                    )}
+                  </div>
+                  {loansError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>Approved</h3>
+                  <div className='flex items-center gap-2'>
+                    {loansLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-blue-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-blue-600'>
+                        {loanStats.approvedLoans}
+                      </p>
+                    )}
+                  </div>
+                  {loansError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>Rejected</h3>
+                  <div className='flex items-center gap-2'>
+                    {loansLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-red-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-red-600'>
+                        {loanStats.rejectedLoans}
+                      </p>
+                    )}
+                  </div>
+                  {loansError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+              </div>
+            </div>
+
+            {/* Document Statistics */}
+            <div>
+              <h3 className='text-lg font-medium text-foreground mb-3'>
+                Document Statistics
+              </h3>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>
+                    Total Documents
+                  </h3>
+                  <div className='flex items-center gap-2'>
+                    {documentsLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-primary' />
+                    ) : (
+                      <p className='text-2xl font-bold text-primary'>
+                        {documentStats.totalDocuments}
+                      </p>
+                    )}
+                  </div>
+                  {documentsError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>
+                    Verified Documents
+                  </h3>
+                  <div className='flex items-center gap-2'>
+                    {documentsLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-green-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-green-600'>
+                        {documentStats.verifiedDocuments}
+                      </p>
+                    )}
+                  </div>
+                  {documentsError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+
+                <Card className='p-4 bg-card hover:bg-accent transition-colors'>
+                  <h3 className='text-sm text-muted-foreground'>
+                    Pending Documents
+                  </h3>
+                  <div className='flex items-center gap-2'>
+                    {documentsLoading ? (
+                      <FiLoader className='w-4 h-4 animate-spin text-yellow-600' />
+                    ) : (
+                      <p className='text-2xl font-bold text-yellow-600'>
+                        {documentStats.pendingDocuments}
+                      </p>
+                    )}
+                  </div>
+                  {documentsError && (
+                    <p className='text-xs text-destructive mt-1'>
+                      Failed to load
+                    </p>
+                  )}
+                </Card>
+              </div>
             </div>
           </Card>
         </div>
