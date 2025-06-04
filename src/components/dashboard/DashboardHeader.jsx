@@ -23,6 +23,9 @@ export default function DashboardHeader({ profile }) {
             >
               Apply for Loan
             </Button>
+            <Button variant='outline' onClick={() => router.push('/loans')}>
+              View All Loans
+            </Button>
 
             <Button
               variant='outline'
