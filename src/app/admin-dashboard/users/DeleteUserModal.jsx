@@ -1,26 +1,54 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FiX, FiTrash2, FiAlertTriangle } from 'react-icons/fi';
-import { deleteUser } from './dummyUserData';
-import { useState } from 'react';
+import { useDeleteUserMutation } from '@/lib/store/authApi';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DeleteUserModal({ user, onClose, onUserDeleted }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+
+  // API hook for deleting user
+  const [deleteUser] = useDeleteUserMutation();
 
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      const deletedUser = deleteUser(user.id);
-      if (deletedUser) {
-        onUserDeleted(deletedUser);
-      } else {
-        alert('Failed to delete user');
-      }
+      console.log('Deleting user with ID:', user.id);
+
+      await deleteUser(user.id).unwrap();
+
+      console.log('User deleted successfully');
+
+      toast({
+        title: 'User Deleted',
+        description: `User ${user.username} has been successfully deleted.`,
+        variant: 'default',
+      });
+
+      onUserDeleted();
     } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('Error deleting user');
+      console.error('Failed to delete user:', error);
+
+      let errorMessage = 'Failed to delete user. Please try again.';
+      if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.data?.error) {
+        errorMessage = error.data.error;
+      } else if (error?.status === 404) {
+        errorMessage = 'User not found.';
+      } else if (error?.status === 403) {
+        errorMessage = 'You do not have permission to delete this user.';
+      }
+
+      toast({
+        title: 'Delete Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsDeleting(false);
     }

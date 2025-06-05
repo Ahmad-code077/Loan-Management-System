@@ -7,13 +7,14 @@ import LoanList from '@/components/dashboard/LoanList';
 import DocumentsList from '@/components/dashboard/DocumentsList';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+import { authUtils } from '@/lib/auth/authUtils';
+import { FiLogOut, FiUser, FiLoader } from 'react-icons/fi';
 import {
   useGetUserDocumentsQuery,
   useGetUserLoansQuery,
   useLogoutMutation,
 } from '@/lib/store/authApi';
-import { authUtils } from '@/lib/auth/authUtils';
-import { FiLogOut, FiUser, FiLoader } from 'react-icons/fi';
 
 export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState(null);

@@ -18,10 +18,13 @@ import {
   FiTarget,
   FiCreditCard,
   FiArrowLeft,
+  FiEdit3,
 } from 'react-icons/fi';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AllLoansPage() {
+  const { toast } = useToast();
   const {
     data: loans = [],
     isLoading,
@@ -35,6 +38,19 @@ export default function AllLoansPage() {
   const getLoanTypeName = (loanTypeId) => {
     const loanType = loanTypes.find((type) => type.id === loanTypeId);
     return loanType ? loanType.name : `Loan Type ${loanTypeId}`;
+  };
+
+  // Handle edit button click
+  const handleEditClick = (loan) => {
+    if (loan.status !== 'pending') {
+      toast({
+        title: 'Cannot Edit Loan',
+        description: `This loan cannot be edited because it is ${loan.status}. Only pending loans can be modified.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    // If it's pending, the Link will handle navigation
   };
 
   // Get status badge style and icon
@@ -180,6 +196,11 @@ export default function AllLoansPage() {
                     </div>
                     <div className='flex flex-col items-end gap-2'>
                       {getStatusBadge(loan.status)}
+                      {loan.status === 'pending' && (
+                        <span className='text-xs text-green-600 font-medium'>
+                          ✓ Editable
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -228,14 +249,33 @@ export default function AllLoansPage() {
                     </span>
                   </div>
 
-                  {/* Action */}
+                  {/* Actions */}
                   <div className='flex gap-2'>
                     <Link href={`/loans/${loan.id}`} className='flex-1'>
-                      <Button className='w-full'>
+                      <Button variant='outline' className='w-full'>
                         <FiEye className='w-4 h-4 mr-2' />
-                        View Full Details
+                        View Details
                       </Button>
                     </Link>
+
+                    {/* Edit Button - Conditional */}
+                    {loan.status === 'pending' ? (
+                      <Link href={`/loans/${loan.id}/edit`} className='flex-1'>
+                        <Button className='w-full'>
+                          <FiEdit3 className='w-4 h-4 mr-2' />
+                          Edit Loan
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant='outline'
+                        className='flex-1 opacity-50'
+                        onClick={() => handleEditClick(loan)}
+                      >
+                        <FiEdit3 className='w-4 h-4 mr-2' />
+                        Edit Loan
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))}

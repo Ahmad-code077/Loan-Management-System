@@ -1,4 +1,5 @@
 export const endpoints = (builder) => ({
+  // ===== AUTH ENDPOINTS =====
   login: builder.mutation({
     query: (credentials) => ({
       url: '/api/token/',
@@ -32,7 +33,7 @@ export const endpoints = (builder) => ({
 
   logout: builder.mutation({
     query: () => ({
-      url: '/api/logout/',
+      url: '/logout/',
       method: 'POST',
     }),
     transformResponse: (response) => {
@@ -60,11 +61,129 @@ export const endpoints = (builder) => ({
     providesTags: ['User'],
   }),
 
+  updateUserProfile: builder.mutation({
+    query: (userData) => ({
+      url: '/api/profile/',
+      method: 'PUT',
+      body: userData,
+    }),
+    invalidatesTags: ['User'],
+  }),
+  // ===== PASSWORD RESET ENDPOINTS =====
+  passwordReset: builder.mutation({
+    query: (data) => ({
+      url: '/password-reset/',
+      method: 'POST',
+      body: data,
+    }),
+  }),
+
+  passwordResetConfirm: builder.mutation({
+    query: ({ uidb64, token, ...data }) => ({
+      url: `/password-reset-confirm/${uidb64}/${token}/`,
+      method: 'POST',
+      body: data,
+    }),
+  }),
+
+  // ===== USER LOAN ENDPOINTS =====
+  applyLoan: builder.mutation({
+    query: (loanData) => ({
+      url: '/apply-loan/',
+      method: 'POST',
+      body: loanData,
+    }),
+    invalidatesTags: ['Loan'],
+  }),
+
+  getUserLoans: builder.query({
+    query: () => '/my-loans/',
+    providesTags: ['Loan'],
+  }),
+
+  updateLoan: builder.mutation({
+    query: ({ id, loanData }) => ({
+      url: `/update-loan/${id}/`,
+      method: 'PUT',
+      body: loanData,
+    }),
+    invalidatesTags: (result, error, { id }) => [
+      { type: 'Loan', id },
+      { type: 'Loan', id: 'LIST' },
+    ],
+  }),
+
+  // ===== USER DOCUMENT ENDPOINTS =====
+  uploadDocument: builder.mutation({
+    query: (documentData) => {
+      const formData = new FormData();
+      formData.append('document_type', documentData.document_type);
+      formData.append('file', documentData.file);
+
+      return {
+        url: '/upload-document/',
+        method: 'POST',
+        body: formData,
+        // Don't set any headers for FormData - let the browser handle it
+      };
+    },
+    invalidatesTags: ['Document'],
+  }),
+
+  getUserDocuments: builder.query({
+    query: () => '/my-documents/',
+    providesTags: ['Document'],
+  }),
+
+  updateDocument: builder.mutation({
+    query: ({ id, documentData }) => {
+      const formData = new FormData();
+      formData.append('document_type', documentData.document_type);
+      formData.append('file', documentData.file);
+
+      return {
+        url: `/my-documents/${id}/`,
+        method: 'PUT',
+        body: formData,
+        prepareHeaders: (headers) => {
+          headers.delete('Content-Type');
+          return headers;
+        },
+      };
+    },
+    invalidatesTags: ['Document'],
+  }),
+
+  // ===== ADMIN USER ENDPOINTS =====
   getUsers: builder.query({
     query: () => '/api/admin/users/',
     providesTags: ['User'],
   }),
+  updateUser: builder.mutation({
+    query: ({ id, userData }) => ({
+      url: `/api/admin/user/${id}/`,
+      method: 'PUT',
+      body: userData,
+    }),
+    invalidatesTags: (result, error, { id }) => [
+      { type: 'User', id },
+      { type: 'User', id: 'LIST' },
+    ],
+  }),
 
+  getUserDetails: builder.query({
+    query: (id) => `/api/admin/user/${id}/`,
+    providesTags: (result, error, id) => [{ type: 'User', id }],
+  }),
+  deleteUser: builder.mutation({
+    query: (id) => ({
+      url: `/api/admin/user/${id}/`,
+      method: 'DELETE',
+    }),
+    invalidatesTags: ['User'],
+  }),
+
+  // ===== ADMIN LOAN ENDPOINTS =====
   getLoans: builder.query({
     query: () => '/api/admin/loan-list/',
     providesTags: ['Loan'],
@@ -98,6 +217,7 @@ export const endpoints = (builder) => ({
     ],
   }),
 
+  // ===== ADMIN DOCUMENT ENDPOINTS =====
   getDocuments: builder.query({
     query: () => '/api/admin/documents/',
     providesTags: ['Document'],
@@ -106,6 +226,12 @@ export const endpoints = (builder) => ({
   getDocumentDetails: builder.query({
     query: (id) => `/api/admin/document/${id}/`,
     providesTags: (result, error, id) => [{ type: 'Document', id }],
+  }),
+
+  // ===== ADMIN LOAN TYPE ENDPOINTS =====
+  getLoanTypes: builder.query({
+    query: () => '/api/admin/loan-types/',
+    providesTags: ['LoanType'],
   }),
 
   addLoanType: builder.mutation({
@@ -117,14 +243,9 @@ export const endpoints = (builder) => ({
     invalidatesTags: ['LoanType'],
   }),
 
-  getLoanTypes: builder.query({
-    query: () => '/api/admin/loan-types/',
-    providesTags: ['LoanType'],
-  }),
-
   updateLoanType: builder.mutation({
     query: ({ id, ...loanType }) => ({
-      url: `/api/admin/loan-types/${id}/`,
+      url: `/api/admin/loan-type/${id}/`,
       method: 'PUT',
       body: loanType,
     }),
@@ -136,83 +257,13 @@ export const endpoints = (builder) => ({
 
   deleteLoanType: builder.mutation({
     query: (id) => ({
-      url: `/api/admin/loan-types/${id}/`,
+      url: `/api/admin/loan-type/${id}/`,
       method: 'DELETE',
     }),
     invalidatesTags: ['LoanType'],
   }),
-  applyLoan: builder.mutation({
-    query: (loanData) => ({
-      url: '/apply-loan/',
-      method: 'POST',
-      body: loanData,
-    }),
-    invalidatesTags: ['Loan'],
-  }),
-  getUserLoans: builder.query({
-    query: () => '/my-loans/',
-    providesTags: ['Loan'],
-  }),
-
-  // uploadDocument: builder.mutation({
-  //   query: (documentData) => {
-  //     const formData = new FormData();
-  //     formData.append('document_type', documentData.document_type);
-  //     formData.append('file', documentData.file);
-
-  //     return {
-  //       url: '/upload-document/',
-  //       method: 'POST',
-  //       body: formData,
-  //       // Don't set Content-Type, let the browser set it for FormData
-  //       prepareHeaders: (headers) => {
-  //         // Remove Content-Type to let browser set it with boundary for multipart/form-data
-  //         headers.delete('Content-Type');
-  //         return headers;
-  //       },
-  //     };
-  //   },
-  //   invalidatesTags: ['Document'],
-  // }),
-
-  uploadDocument: builder.mutation({
-    query: (documentData) => {
-      const formData = new FormData();
-      formData.append('document_type', documentData.document_type);
-      formData.append('file', documentData.file);
-
-      return {
-        url: '/upload-document/',
-        method: 'POST',
-        body: formData,
-        // Don't set any headers for FormData - let the browser handle it
-      };
-    },
-    invalidatesTags: ['Document'],
-  }),
-
-  // Fixed endpoint name
-  getUserDocuments: builder.query({
-    query: () => '/my-documents/',
-    providesTags: ['Document'],
-  }),
-
-  updateDocument: builder.mutation({
-    query: ({ id, documentData }) => {
-      const formData = new FormData();
-      formData.append('document_type', documentData.document_type);
-      formData.append('file', documentData.file);
-
-      return {
-        url: `/my-documents/${id}/`,
-        method: 'PUT',
-        body: formData,
-        prepareHeaders: (headers) => {
-          headers.delete('Content-Type');
-          return headers;
-        },
-      };
-    },
-    invalidatesTags: ['Document'],
+  getLoanTypeDetails: builder.query({
+    query: (id) => `/api/admin/loan-type/${id}/`,
+    providesTags: (result, error, id) => [{ type: 'LoanType', id }],
   }),
 });

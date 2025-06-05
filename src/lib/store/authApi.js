@@ -165,25 +165,48 @@ export const authApi = createApi({
 });
 
 export const {
+  // ===== AUTH HOOKS =====
   useLoginMutation,
   useRegisterMutation,
   useLogoutMutation,
   useGetProfileQuery,
+  useUpdateUserProfileMutation,
+
+  // ===== PASSWORD RESET HOOKS =====
+  usePasswordResetMutation,
+  usePasswordResetConfirmMutation,
+
+  // ===== USER LOAN HOOKS =====
+  useApplyLoanMutation,
+  useGetUserLoansQuery,
+  useUpdateLoanMutation,
+
+  // ===== USER DOCUMENT HOOKS =====
+  useUploadDocumentMutation,
+  useGetUserDocumentsQuery,
+  useUpdateDocumentMutation,
+
+  // ===== ADMIN USER HOOKS =====
   useGetUsersQuery,
+  useGetUserDetailsQuery,
+  useUpdateUserMutation,
+  // NEW: For admin user updates
+  useDeleteUserMutation, // NEW: For admin user deletion
+
+  // ===== ADMIN LOAN HOOKS =====
   useGetLoansQuery,
   useGetLoanDetailsQuery,
   useApproveLoanMutation,
   useRejectLoanMutation,
+
+  // ===== ADMIN DOCUMENT HOOKS =====
   useGetDocumentsQuery,
   useGetDocumentDetailsQuery,
-  useAddLoanTypeMutation,
+
+  // ===== ADMIN LOAN TYPE HOOKS =====
   useGetLoanTypesQuery,
+  useGetLoanTypeDetailsQuery,
+  useAddLoanTypeMutation,
   useUpdateLoanTypeMutation,
   useDeleteLoanTypeMutation,
-  useApplyLoanMutation,
-  useGetUserLoansQuery,
-
-  useUploadDocumentMutation,
-  useGetUserDocumentsQuery,
-  useUpdateDocumentMutation,
 } = authApi;
