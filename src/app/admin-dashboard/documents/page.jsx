@@ -11,19 +11,42 @@ export default function DocumentsPage() {
   const [selectedType, setSelectedType] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Initial load when documents data is available
   useEffect(() => {
-    loadDocuments();
-  }, [selectedType, searchTerm]);
+    if (documents.length > 0) {
+      loadDocuments();
+    }
+  }, [documents]); // Load when documents are fetched
+
+  // Filter when type or search changes
+  useEffect(() => {
+    if (documents.length > 0) {
+      loadDocuments();
+    }
+  }, [selectedType, searchTerm]); // Only depend on filter values
+
+  // Also set initial filtered documents when documents first load
+  useEffect(() => {
+    if (documents.length > 0 && filteredDocuments.length === 0) {
+      setFilteredDocuments(documents);
+    }
+  }, [documents]); // Set initial data
 
   const loadDocuments = async () => {
     const filters = {
       documentType: selectedType,
       search: searchTerm,
     };
+    console.log('filters:', filters);
 
     const result = await getDocuments(filters);
+    console.log('result.data:', result.data);
+
     if (result.success) {
       setFilteredDocuments(result.data);
+    } else {
+      // If filtering fails, show all documents
+      setFilteredDocuments(documents);
     }
   };
 

@@ -1,30 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+
+import { useGetDocumentDetailsQuery } from '@/lib/store/authApi';
 import DocsDetailHeader from './docsComponents/DocsDetailHeader';
-import DocsInfoCard from './docsComponents/DocsInfoCard';
 import DocsPreviewCard from './docsComponents/DocsPreviewCard';
+import DocsInfoCard from './docsComponents/DocsInfoCard';
 import DocsUserInfoCard from './docsComponents/DocsUserInfoCard';
-import { useDocuments } from '../hooks/useDocuments';
 
 export default function DocumentDetailPage() {
   const { id } = useParams();
-  const [document, setDocument] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { getDocumentById } = useDocuments();
 
-  useEffect(() => {
-    loadDocument();
-  }, [id]);
+  // Use the real API hook directly
+  const {
+    data: document,
+    isLoading: loading,
+    error,
+  } = useGetDocumentDetailsQuery(id);
 
-  const loadDocument = async () => {
-    const result = await getDocumentById(id);
-    if (result.success) {
-      setDocument(result.data);
-    }
-    setLoading(false);
-  };
+  console.log('Document data:', document);
+  console.log('Loading:', loading);
+  console.log('Error:', error);
 
   if (loading) {
     return (
@@ -36,7 +32,7 @@ export default function DocumentDetailPage() {
     );
   }
 
-  if (!document) {
+  if (error || !document) {
     return (
       <div className='space-y-6'>
         <div className='text-center py-8'>
@@ -46,6 +42,11 @@ export default function DocumentDetailPage() {
           <p className='text-muted-foreground mt-1'>
             The requested document could not be found.
           </p>
+          {error && (
+            <p className='text-red-500 mt-2'>
+              Error: {error?.data?.message || error?.status || 'Unknown error'}
+            </p>
+          )}
         </div>
       </div>
     );

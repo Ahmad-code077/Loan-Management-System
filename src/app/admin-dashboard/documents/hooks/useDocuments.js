@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { mockDocuments } from '../data/mockData';
+import {
+  useGetDocumentsQuery,
+  useGetDocumentDetailsQuery,
+} from '@/lib/store/authApi';
 
 export const useDocuments = () => {
-  const [documents, setDocuments] = useState(mockDocuments);
   const [loading, setLoading] = useState(false);
 
+  // Real API hooks
+  const { data: documentsData = [], refetch } = useGetDocumentsQuery();
   const getDocuments = async (filters = {}) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Refetch from API
+      await refetch();
 
-      let filteredDocs = [...documents];
+      let filteredDocs = [...documentsData];
 
       // Filter by document type
       if (filters.documentType && filters.documentType !== 'all') {
@@ -34,8 +38,8 @@ export const useDocuments = () => {
           (doc) =>
             doc.document_type.toLowerCase().includes(searchLower) ||
             doc.user.username.toLowerCase().includes(searchLower) ||
-            doc.user.first_name.toLowerCase().includes(searchLower) ||
-            doc.user.last_name.toLowerCase().includes(searchLower)
+            doc.user.first_name?.toLowerCase().includes(searchLower) ||
+            doc.user.last_name?.toLowerCase().includes(searchLower)
         );
       }
 
@@ -50,10 +54,8 @@ export const useDocuments = () => {
   const getDocumentById = async (id) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const document = documents.find((doc) => doc.id === parseInt(id));
+      // Find document in the existing data or fetch from API
+      const document = documentsData.find((doc) => doc.id === parseInt(id));
       return { success: true, data: document };
     } catch (error) {
       return { success: false, error: error.message };
@@ -71,9 +73,8 @@ export const useDocuments = () => {
     const filters = { userId };
     return await getDocuments(filters);
   };
-
   return {
-    documents,
+    documents: documentsData,
     loading,
     getDocuments,
     getDocumentById,
