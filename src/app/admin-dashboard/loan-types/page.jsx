@@ -33,24 +33,51 @@ export default function LoanTypesPage() {
     setSelectedLoanType(null);
   };
 
+  // Handle successful operations
+  const handleAddSuccess = async (newLoanType) => {
+    const result = await addLoanType(newLoanType);
+    if (result.success) {
+      closeAllModals();
+    }
+    return result;
+  };
+
+  const handleUpdateSuccess = async (updatedData) => {
+    const result = await updateLoanType(selectedLoanType.id, updatedData);
+    if (result.success) {
+      closeAllModals();
+    }
+    return result;
+  };
+
+  const handleDeleteSuccess = async () => {
+    const result = await deleteLoanType(selectedLoanType.id);
+    if (result.success) {
+      closeAllModals();
+    }
+    return result;
+  };
+
   return (
     <div className='space-y-6'>
       <LoanTypesHeader
         onAddNew={() => setShowAddModal(true)}
         totalTypes={loanTypes.length}
+        loading={loading}
       />
 
       <LoanTypesTable
         loanTypes={loanTypes}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        loading={loading}
       />
 
       {/* Modals */}
       {showAddModal && (
         <AddLoanTypeModal
           onClose={closeAllModals}
-          onAdd={addLoanType}
+          onAdd={handleAddSuccess}
           loading={loading}
         />
       )}
@@ -59,7 +86,7 @@ export default function LoanTypesPage() {
         <EditLoanTypeModal
           loanType={selectedLoanType}
           onClose={closeAllModals}
-          onUpdate={updateLoanType}
+          onUpdate={handleUpdateSuccess}
           loading={loading}
         />
       )}
@@ -68,7 +95,7 @@ export default function LoanTypesPage() {
         <DeleteConfirmModal
           loanType={selectedLoanType}
           onClose={closeAllModals}
-          onDelete={deleteLoanType}
+          onDelete={handleDeleteSuccess}
           loading={loading}
         />
       )}
