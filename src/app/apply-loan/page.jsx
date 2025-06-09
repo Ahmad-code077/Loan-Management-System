@@ -24,38 +24,30 @@ const REQUIRED_DOCUMENT_TYPES = [
     type: 'cnic_front',
     name: 'CNIC Front',
     description: 'Valid CNIC front copy',
-    // Map to actual Django model choice DISPLAY VALUES
     apiDisplayNames: ['CNIC Front'],
-    // Map to actual Django model choice KEYS (database values)
     apiChoiceKeys: ['cnic_front'],
-    requiresBoth: false, // Single document check
+    requiresBoth: false,
   },
   {
     type: 'cnic_back',
     name: 'CNIC Back',
     description: 'Valid CNIC back copy',
-    // Map to actual Django model choice DISPLAY VALUE
     apiDisplayNames: ['CNIC Back'],
-    // Map to actual Django model choice KEY
     apiChoiceKeys: ['cnic_back'],
-    requiresBoth: false, // Single document check
+    requiresBoth: false,
   },
   {
     type: 'salary_slip',
     name: 'Salary Slip',
     description: 'Recent salary slip or income proof',
-    // Map to actual Django model choice DISPLAY VALUE
     apiDisplayNames: ['Salary Slip'],
-    // Map to actual Django model choice KEY
     apiChoiceKeys: ['salary_slip'],
-    requiresBoth: false, // Single document check
+    requiresBoth: false,
   },
 ];
 
 export default function ApplyLoanPage() {
   const router = useRouter();
-
-  // Fetch user documents
   const {
     data: userDocuments = [],
     isLoading: documentsLoading,
