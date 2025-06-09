@@ -52,11 +52,7 @@ export default function AddUserModal({ onClose, onUserAdded }) {
         }
       });
 
-      console.log('Registering new user:', filteredData);
-
       const result = await registerUser(filteredData).unwrap();
-
-      console.log('User registered successfully:', result);
 
       toast({
         title: 'User Created',

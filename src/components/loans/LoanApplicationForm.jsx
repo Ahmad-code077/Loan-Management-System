@@ -10,28 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
   useApplyLoanMutation,
-  useGetLoanTypesQuery,
+  useGetUserLoanTypesQuery, // ✅ CHANGED: Use user endpoint instead of admin
 } from '@/lib/store/authApi';
 import { authUtils } from '@/lib/auth/authUtils';
 import { FiCheck, FiX, FiLoader, FiAlertTriangle } from 'react-icons/fi';
 import { Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Fallback loan types - only used when API fails or returns no data
-const FALLBACK_LOAN_TYPES = [
-  {
-    id: 1,
-    name: 'Personal Loan',
-    interest_rate: '12.00',
-  },
-  {
-    id: 2,
-    name: 'Business Loan',
-    interest_rate: '12.00',
-  },
-];
-
-// Zod validation schema with updated phone validation
+// Remove fallback - only use API data
 const loanApplicationSchema = z.object({
   fullname: z.string().min(2, 'Full name must be at least 2 characters'),
   address: z.string().min(10, 'Address must be at least 10 characters'),
@@ -43,8 +29,9 @@ const loanApplicationSchema = z.object({
     )
     .min(11, 'Contact number is required'),
   marital_status: z.enum(['Single', 'Married', 'Divorced', 'Widowed'], {
-    required_error: 'Please select marital status',
+    message: ' Please select marital status',
   }),
+
   CNIC: z
     .string()
     .regex(/^\d{5}-\d{7}-\d{1}$/, 'CNIC format: 12345-1234567-1')
@@ -53,21 +40,44 @@ const loanApplicationSchema = z.object({
   employment_status: z.enum(
     ['Employed', 'Self-Employed', 'Unemployed', 'Student'],
     {
-      required_error: 'Please select employment status',
+      message: 'Please select employment status',
     }
   ),
   monthly_income: z
-    .number()
-    .min(0, 'Monthly income must be positive')
-    .max(10000000, 'Monthly income seems too high'),
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? 0 : Math.max(0, parsed);
+      }
+      return Math.max(0, val || 0);
+    })
+    .refine((val) => val >= 30000, {
+      message: 'Monthly income must be at least PKR 30,000',
+    })
+    .refine((val) => val <= 10000000, {
+      message: 'Monthly income seems too high (max PKR 10,000,000)',
+    }),
   organization_name: z
     .string()
     .min(2, 'Organization name must be at least 2 characters'),
   loan_type: z.number().min(1, 'Please select a loan type'),
   amount: z
-    .number()
-    .min(1000, 'Minimum loan amount is PKR 1,000')
-    .max(10000000, 'Maximum loan amount is PKR 10,000,000'),
+    .union([z.string(), z.number()])
+    .transform((val) => {
+      console.log('vlaue of val', val);
+      if (typeof val === 'string') {
+        const parsed = parseFloat(val);
+        return isNaN(parsed) ? undefined : parsed;
+      }
+      return val;
+    })
+    .refine((val) => val !== undefined && val >= 1000, {
+      message: 'Minimum loan amount is PKR 1,000',
+    })
+    .refine((val) => val !== undefined && val <= 10000000, {
+      message: 'Maximum loan amount is PKR 10,000,000',
+    }),
   purpose: z
     .string()
     .min(20, 'Purpose must be at least 20 characters')
@@ -78,31 +88,28 @@ const loanApplicationSchema = z.object({
     .regex(/^\d+$/, 'Duration must be a number'),
 });
 
-// Updated loan calculation function based on your requirements
+// Simple interest calculation as per your requirements
 const calculateLoanDetails = (amount, duration, interestRate) => {
   const principal = Number(amount);
   const months = Number(duration);
   const rate = Number(interestRate);
 
-  if (!principal || !months || !rate) return null;
+  if (!principal || !months || rate === undefined || rate === null) return null;
 
-  // Step 2: Calculate interest using your formula
-  // interest = amount × (interest_rate / 100)
+  // Simple interest formula: Interest = Principal × Rate / 100
   const interest = principal * (rate / 100);
 
-  // Step 3: Calculate total payable
-  // total_payable = amount + interest
+  // Total payable = Principal + Interest
   const totalPayable = principal + interest;
 
-  // Step 3: Calculate monthly installment
-  // monthly_installment = total_payable / months
+  // Monthly installment = Total Payable / Duration
   const monthlyInstallment = totalPayable / months;
 
   return {
     principal: Math.round(principal),
     interest: Math.round(interest),
     totalPayable: Math.round(totalPayable),
-    monthlyInstallment: Math.round(monthlyInstallment * 100) / 100, // Round to 2 decimal places
+    monthlyInstallment: Math.round(monthlyInstallment * 100) / 100,
     interestRate: rate,
     duration: months,
   };
@@ -112,54 +119,16 @@ export default function LoanApplicationForm() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
   const [calculatedLoan, setCalculatedLoan] = useState(null);
-  const [usingFallback, setUsingFallback] = useState(true); // Start with fallback to prevent hydration mismatch
-  const [isClient, setIsClient] = useState(false); // Track client-side rendering
   const { toast } = useToast();
 
-  // API hooks
+  // ✅ FIXED: Use correct API hooks
   const [applyLoan, { isLoading: isSubmitting }] = useApplyLoanMutation();
   const {
-    data: loanTypesData,
+    data: loanTypesData = [], // Default to empty array
     isLoading: loadingLoanTypes,
     error: loanTypesError,
-  } = useGetLoanTypesQuery();
-
-  // Ensure component is client-side rendered
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  // Smart loan types logic with fallback - only run on client
-  const loanTypes = (() => {
-    // Always use fallback during SSR to prevent hydration mismatch
-    if (!isClient) {
-      return FALLBACK_LOAN_TYPES;
-    }
-
-    // Priority 1: Use API data if available and not empty
-    if (
-      loanTypesData &&
-      Array.isArray(loanTypesData) &&
-      loanTypesData.length > 0
-    ) {
-      if (usingFallback) setUsingFallback(false);
-      return loanTypesData;
-    }
-
-    // Priority 2: Use fallback if API failed or returned empty data
-    if (
-      loanTypesError ||
-      !loanTypesData ||
-      (Array.isArray(loanTypesData) && loanTypesData.length === 0)
-    ) {
-      if (!usingFallback) setUsingFallback(true);
-      return FALLBACK_LOAN_TYPES;
-    }
-
-    // Priority 3: Return fallback if still loading
-    if (!usingFallback) setUsingFallback(true);
-    return FALLBACK_LOAN_TYPES;
-  })();
+    refetch: refetchLoanTypes,
+  } = useGetUserLoanTypesQuery(); // ✅ Use user endpoint
 
   // React Hook Form with Zod validation
   const {
@@ -193,43 +162,37 @@ export default function LoanApplicationForm() {
 
   // Get current user data on component mount
   useEffect(() => {
-    if (isClient) {
-      const user = authUtils.getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
-        // Pre-fill email from user data
-        setValue('email', user.email || '');
-      }
+    const user = authUtils.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      setValue('email', user.email || '');
     }
-  }, [setValue, isClient]);
+  }, [setValue]);
 
-  // Calculate loan details when relevant values change (immediate calculation)
+  // Calculate loan details when relevant values change
   useEffect(() => {
-    if (isClient) {
-      const loanTypeInfo = loanTypes?.find(
-        (lt) => lt.id === Number(selectedLoanType)
+    const loanTypeInfo = loanTypesData?.find(
+      (lt) => lt.id === Number(selectedLoanType)
+    );
+
+    if (loanTypeInfo && selectedAmount && selectedDuration) {
+      const calculation = calculateLoanDetails(
+        selectedAmount,
+        selectedDuration,
+        loanTypeInfo.interest_rate
       );
-
-      if (loanTypeInfo && selectedAmount && selectedDuration) {
-        const calculation = calculateLoanDetails(
-          selectedAmount,
-          selectedDuration,
-          loanTypeInfo.interest_rate
-        );
-        setCalculatedLoan(calculation);
-      } else {
-        setCalculatedLoan(null);
-      }
+      setCalculatedLoan(calculation);
+    } else {
+      setCalculatedLoan(null);
     }
-  }, [selectedLoanType, selectedAmount, selectedDuration, loanTypes, isClient]);
+  }, [selectedLoanType, selectedAmount, selectedDuration, loanTypesData]);
 
-  const selectedLoanTypeInfo = loanTypes?.find(
+  const selectedLoanTypeInfo = loanTypesData?.find(
     (lt) => lt.id === Number(selectedLoanType)
   );
 
   const onSubmit = async (data) => {
     try {
-      // Convert string numbers to actual numbers
       const formattedData = {
         ...data,
         loan_type: Number(data.loan_type),
@@ -243,14 +206,12 @@ export default function LoanApplicationForm() {
 
       console.log('Loan application submitted successfully:', result);
 
-      // Show success message and redirect
       toast({
         title: 'Application Submitted',
         description: 'Your loan application has been submitted successfully!',
         variant: 'default',
       });
 
-      // Redirect after a short delay
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
@@ -262,6 +223,8 @@ export default function LoanApplicationForm() {
         errorMessage = error.data.documents;
       } else if (error?.data?.error) {
         errorMessage = error.data.error;
+      } else if (error?.data?.detail) {
+        errorMessage = error.data.detail;
       }
 
       toast({
@@ -272,35 +235,70 @@ export default function LoanApplicationForm() {
     }
   };
 
-  // Show loading state only when necessary and on client
-  if (!isClient) {
+  // Loading state for loan types
+  if (loadingLoanTypes) {
     return (
       <div className='flex items-center justify-center p-8'>
         <FiLoader className='w-6 h-6 animate-spin text-primary' />
-        <span className='ml-2'>Loading...</span>
+        <span className='ml-2'>Loading loan types...</span>
+      </div>
+    );
+  }
+
+  // Error state for loan types
+  if (loanTypesError) {
+    return (
+      <div className='text-center p-8'>
+        <FiAlertTriangle className='w-12 h-12 text-red-500 mx-auto mb-4' />
+        <h3 className='text-lg font-medium mb-2 text-red-600'>
+          Failed to Load Loan Types
+        </h3>
+        <p className='text-gray-600 mb-4'>
+          {loanTypesError?.data?.message ||
+            'Unable to fetch loan types from server.'}
+        </p>
+        <Button onClick={refetchLoanTypes} variant='outline'>
+          <FiLoader className='w-4 h-4 mr-2' />
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // No loan types available
+  if (!loanTypesData || loanTypesData.length === 0) {
+    return (
+      <div className='text-center p-8'>
+        <FiAlertTriangle className='w-12 h-12 text-yellow-500 mx-auto mb-4' />
+        <h3 className='text-lg font-medium mb-2 text-yellow-600'>
+          No Loan Types Available
+        </h3>
+        <p className='text-gray-600 mb-4'>
+          There are currently no loan types available for application.
+        </p>
+        <Button onClick={refetchLoanTypes} variant='outline'>
+          <FiLoader className='w-4 h-4 mr-2' />
+          Refresh
+        </Button>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
-      {/* Fallback Warning - Show when using fallback data and on client */}
-      {isClient && usingFallback && (
-        <div className='p-4 bg-yellow-50 border border-yellow-200 rounded-lg'>
-          <div className='flex items-center gap-2 text-yellow-800'>
-            <FiAlertTriangle className='w-5 h-5' />
-            <div>
-              <p className='font-medium'>Using Default Loan Types</p>
-              <p className='text-sm'>
-                Using default options: Personal Loan and Business Loan (12%
-                interest rate).
-                {loanTypesError &&
-                  ' Please check your internet connection or try refreshing the page.'}
-              </p>
-            </div>
+      {/* API Status Info */}
+      <div className='p-4 bg-green-50 border border-green-200 rounded-lg'>
+        <div className='flex items-center gap-2 text-green-800'>
+          <FiCheck className='w-5 h-5' />
+          <div>
+            <p className='font-medium'>Loan Types Loaded Successfully</p>
+            <p className='text-sm'>
+              Found {loanTypesData.length} loan type(s) available for
+              application.
+            </p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Personal Information Section */}
       <div className='bg-gray-50 p-4 rounded-lg'>
@@ -458,6 +456,8 @@ export default function LoanApplicationForm() {
               {...register('monthly_income', { valueAsNumber: true })}
               type='number'
               placeholder='50000'
+              min='0' // ✅ ADDED: Prevents negative values
+              step='1'
               className={errors.monthly_income ? 'border-red-500' : ''}
             />
             {errors.monthly_income && (
@@ -505,10 +505,9 @@ export default function LoanApplicationForm() {
               }`}
             >
               <option value={0}>Select a loan type</option>
-              {loanTypes?.map((type) => (
+              {loanTypesData?.map((type) => (
                 <option key={type.id} value={type.id}>
                   {type.name} - {type.interest_rate}% interest rate
-                  {usingFallback ? ' (Default)' : ''}
                 </option>
               ))}
             </select>
@@ -517,14 +516,10 @@ export default function LoanApplicationForm() {
                 <p className='flex items-center'>
                   <FiCheck className='w-3 h-3 mr-1 text-green-500' />
                   Selected: {selectedLoanTypeInfo.name}
-                  {usingFallback && (
-                    <span className='ml-1 text-yellow-600 text-xs'>
-                      (Default Option)
-                    </span>
-                  )}
                 </p>
                 <p className='text-blue-600'>
-                  Interest Rate: {selectedLoanTypeInfo.interest_rate}%
+                  Interest Rate: {selectedLoanTypeInfo.interest_rate}% (Simple
+                  Interest)
                 </p>
               </div>
             )}
@@ -602,17 +597,12 @@ export default function LoanApplicationForm() {
         </div>
       </div>
 
-      {/* Loan Calculation Display - Shows immediately when user selects inputs */}
+      {/* Loan Calculation Display */}
       {calculatedLoan && (
         <div className='bg-green-50 p-4 rounded-lg border border-green-200'>
           <h3 className='font-medium text-green-800 mb-3 flex items-center'>
             <Calculator className='w-5 h-5 mr-2' />
-            Loan Calculation Summary
-            {usingFallback && (
-              <span className='ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded'>
-                Using Default Rates
-              </span>
-            )}
+            Loan Calculation Summary (Simple Interest)
           </h3>
 
           {/* Calculation Formula Display */}
@@ -621,14 +611,14 @@ export default function LoanApplicationForm() {
               Calculation Formula:
             </h4>
             <div className='text-sm text-gray-600 space-y-1'>
-              <p>• Interest = Amount × (Interest Rate / 100)</p>
+              <p>• Interest = Principal × (Interest Rate / 100)</p>
               <p>
                 • Interest = {calculatedLoan.principal.toLocaleString()} × (
                 {calculatedLoan.interestRate}% / 100) = PKR{' '}
                 {calculatedLoan.interest.toLocaleString()}
               </p>
               <p>
-                • Total Payable = Amount + Interest = PKR{' '}
+                • Total Payable = Principal + Interest = PKR{' '}
                 {calculatedLoan.totalPayable.toLocaleString()}
               </p>
               <p>
@@ -665,17 +655,11 @@ export default function LoanApplicationForm() {
             </div>
           </div>
 
-          {/* Additional Details */}
           <div className='mt-3 grid grid-cols-1 md:grid-cols-2 gap-4'>
             <div className='bg-white p-3 rounded border'>
               <p className='text-xs text-gray-500'>Interest Rate</p>
               <p className='text-sm font-medium text-gray-700'>
-                {calculatedLoan.interestRate}% (Fixed Rate)
-                {usingFallback && (
-                  <span className='ml-1 text-yellow-600 text-xs'>
-                    (Default)
-                  </span>
-                )}
+                {calculatedLoan.interestRate}% (Simple Interest)
               </p>
             </div>
             <div className='bg-white p-3 rounded border'>
@@ -687,11 +671,8 @@ export default function LoanApplicationForm() {
           </div>
 
           <p className='text-xs text-green-700 mt-3'>
-            * This calculation is based on the simple interest formula as per
-            your loan policy. Final terms are subject to approval and
-            verification.
-            {usingFallback &&
-              ' Using default interest rates due to server connectivity issues.'}
+            * This calculation is based on simple interest formula. Final terms
+            are subject to approval and verification.
           </p>
         </div>
       )}

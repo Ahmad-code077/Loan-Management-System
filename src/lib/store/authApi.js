@@ -180,6 +180,7 @@ export const {
   useApplyLoanMutation,
   useGetUserLoansQuery,
   useUpdateLoanMutation,
+  useGetUserLoanTypesQuery,
 
   // ===== USER DOCUMENT HOOKS =====
   useUploadDocumentMutation,
@@ -190,8 +191,7 @@ export const {
   useGetUsersQuery,
   useGetUserDetailsQuery,
   useUpdateUserMutation,
-  // NEW: For admin user updates
-  useDeleteUserMutation, // NEW: For admin user deletion
+  useDeleteUserMutation,
 
   // ===== ADMIN LOAN HOOKS =====
   useGetLoansQuery,

@@ -17,11 +17,7 @@ export default function DeleteUserModal({ user, onClose, onUserDeleted }) {
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      console.log('Deleting user with ID:', user.id);
-
       await deleteUser(user.id).unwrap();
-
-      console.log('User deleted successfully');
 
       toast({
         title: 'User Deleted',

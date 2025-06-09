@@ -113,6 +113,11 @@ export const endpoints = (builder) => ({
     ],
   }),
 
+  getUserLoanTypes: builder.query({
+    query: () => '/loan-types/',
+    providesTags: ['LoanType'],
+  }),
+
   // ===== USER DOCUMENT ENDPOINTS =====
   uploadDocument: builder.mutation({
     query: (documentData) => {
@@ -124,7 +129,6 @@ export const endpoints = (builder) => ({
         url: '/upload-document/',
         method: 'POST',
         body: formData,
-        // Don't set any headers for FormData - let the browser handle it
       };
     },
     invalidatesTags: ['Document'],

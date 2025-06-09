@@ -263,14 +263,10 @@ export default function EditLoanPage() {
         monthly_income: Number(data.monthly_income),
       };
 
-      console.log('Updating loan application:', formattedData);
-
       const result = await updateLoan({
         id: loanId,
         loanData: formattedData,
       }).unwrap();
-
-      console.log('Loan application updated successfully:', result);
 
       // Show success message and redirect
       toast({

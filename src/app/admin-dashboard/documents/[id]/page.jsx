@@ -18,10 +18,6 @@ export default function DocumentDetailPage() {
     error,
   } = useGetDocumentDetailsQuery(id);
 
-  console.log('Document data:', document);
-  console.log('Loading:', loading);
-  console.log('Error:', error);
-
   if (loading) {
     return (
       <div className='space-y-6'>

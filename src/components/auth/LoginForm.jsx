@@ -28,7 +28,6 @@ export default function LoginForm() {
   const onSubmit = async (data) => {
     try {
       const result = await login(data);
-      console.log('result at login ', result);
 
       // Check if login was successful
       if (result.data) {

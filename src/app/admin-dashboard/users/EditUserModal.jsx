@@ -50,14 +50,10 @@ export default function EditUserModal({ user, onClose, onUserUpdated }) {
         }
       });
 
-      console.log('Updating user:', { id: user.id, userData: filteredData });
-
       const result = await updateUser({
         id: user.id,
         userData: filteredData,
       }).unwrap();
-
-      console.log('User updated successfully:', result);
 
       toast({
         title: 'User Updated',

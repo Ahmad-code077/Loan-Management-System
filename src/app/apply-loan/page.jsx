@@ -18,7 +18,6 @@ import {
 import Link from 'next/link';
 import { useGetUserDocumentsQuery } from '@/lib/store/authApi';
 
-// Updated document mapping - Each document as separate check (3 total)
 const REQUIRED_DOCUMENT_TYPES = [
   {
     type: 'cnic_front',
@@ -55,8 +54,6 @@ export default function ApplyLoanPage() {
     refetch: refetchDocuments,
   } = useGetUserDocumentsQuery();
 
-  console.log('userDocuments', userDocuments);
-
   // Check authentication
   useEffect(() => {
     const user = authUtils.getCurrentUser();
@@ -68,7 +65,6 @@ export default function ApplyLoanPage() {
   // Updated document status check - Each document checked individually
   const getDocumentStatus = () => {
     const uploadedDisplayNames = userDocuments.map((doc) => doc.document_type);
-    console.log('uploadedDisplayNames from API:', uploadedDisplayNames);
 
     return REQUIRED_DOCUMENT_TYPES.map((reqDoc) => {
       // Check if we have the display name
@@ -101,18 +97,9 @@ export default function ApplyLoanPage() {
   };
 
   const documentStatus = getDocumentStatus();
-  console.log('documentStatus', documentStatus);
 
   const allDocumentsUploaded = documentStatus.every((doc) => doc.isUploaded);
   const uploadedCount = documentStatus.filter((doc) => doc.isUploaded).length;
-
-  console.log('allDocumentsUploaded:', allDocumentsUploaded);
-  console.log(
-    'uploadedCount:',
-    uploadedCount,
-    'of',
-    REQUIRED_DOCUMENT_TYPES.length
-  );
 
   // Loading state
   if (documentsLoading) {

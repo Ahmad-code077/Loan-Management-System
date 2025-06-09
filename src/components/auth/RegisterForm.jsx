@@ -54,7 +54,6 @@ export default function RegisterForm() {
     try {
       const result = await register(data).unwrap();
 
-      console.log('result at register ', result);
       // Show success toast
       toast({
         title: 'Registration Successful',

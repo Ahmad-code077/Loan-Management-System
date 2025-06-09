@@ -37,10 +37,8 @@ export default function DocumentsPage() {
       documentType: selectedType,
       search: searchTerm,
     };
-    console.log('filters:', filters);
 
     const result = await getDocuments(filters);
-    console.log('result.data:', result.data);
 
     if (result.success) {
       setFilteredDocuments(result.data);
