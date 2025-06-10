@@ -55,6 +55,7 @@ export default function DocumentsPage() {
   const handleSearchChange = (search) => {
     setSearchTerm(search);
   };
+  console.log('documents length:', documents);
 
   return (
     <div className='space-y-6'>

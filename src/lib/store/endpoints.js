@@ -232,6 +232,12 @@ export const endpoints = (builder) => ({
     providesTags: (result, error, id) => [{ type: 'Document', id }],
   }),
 
+  //   updateLoanStatus: builder.mutation({
+  //     query:(data)=>{
+  // url:'/api/admin/document/${id}/';
+  //     }
+  //   }),
+
   // ===== ADMIN LOAN TYPE ENDPOINTS =====
   getLoanTypes: builder.query({
     query: () => '/api/admin/loan-types/',
