@@ -66,13 +66,6 @@ export default function DocsUserInfoCard({ document }) {
               View User Profile
             </Button>
           </div>
-
-          <div className='bg-purple-50 p-3 rounded-lg border border-purple-200'>
-            <p className='text-xs text-purple-700'>
-              <strong>Note:</strong> You can view all documents uploaded by this
-              user from their profile page.
-            </p>
-          </div>
         </div>
       </CardContent>
     </Card>

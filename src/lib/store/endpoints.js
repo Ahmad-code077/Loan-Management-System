@@ -232,12 +232,17 @@ export const endpoints = (builder) => ({
     providesTags: (result, error, id) => [{ type: 'Document', id }],
   }),
 
-  //   updateLoanStatus: builder.mutation({
-  //     query:(data)=>{
-  // url:'/api/admin/document/${id}/';
-  //     }
-  //   }),
-
+  verifyDocument: builder.mutation({
+    query: ({ id, isVerified }) => ({
+      url: `/api/admin/document/${id}/`,
+      method: 'PATCH',
+      body: { is_verified: isVerified },
+    }),
+    invalidatesTags: (result, error, { id }) => [
+      { type: 'Document', id },
+      { type: 'Document', id: 'LIST' },
+    ],
+  }),
   // ===== ADMIN LOAN TYPE ENDPOINTS =====
   getLoanTypes: builder.query({
     query: () => '/api/admin/loan-types/',

@@ -186,6 +186,7 @@ export const {
   useUploadDocumentMutation,
   useGetUserDocumentsQuery,
   useUpdateDocumentMutation,
+  useVerifyDocumentMutation,
 
   // ===== ADMIN USER HOOKS =====
   useGetUsersQuery,

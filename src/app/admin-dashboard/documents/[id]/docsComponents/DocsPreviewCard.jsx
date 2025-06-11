@@ -68,13 +68,6 @@ export default function DocsPreviewCard({ document }) {
               Download
             </Button>
           </div>
-
-          <div className='bg-green-50 p-3 rounded-lg border border-green-200'>
-            <p className='text-xs text-green-700'>
-              <strong>Tip:</strong> Right-click on the image and select
-              &quot;Open in new tab&quot; to view in full resolution.
-            </p>
-          </div>
         </div>
       </CardContent>
     </Card>

@@ -1,12 +1,13 @@
+// Update: src/app/admin-dashboard/documents/[id]/page.jsx
 'use client';
 
 import { useParams } from 'next/navigation';
-
 import { useGetDocumentDetailsQuery } from '@/lib/store/authApi';
 import DocsDetailHeader from './docsComponents/DocsDetailHeader';
 import DocsPreviewCard from './docsComponents/DocsPreviewCard';
 import DocsInfoCard from './docsComponents/DocsInfoCard';
 import DocsUserInfoCard from './docsComponents/DocsUserInfoCard';
+import DocsVerificationCard from './docsComponents/DocsVerificationCard.jsx'; // ✅ Import new component
 
 export default function DocumentDetailPage() {
   const { id } = useParams();
@@ -16,7 +17,14 @@ export default function DocumentDetailPage() {
     data: document,
     isLoading: loading,
     error,
+    refetch, // ✅ Add refetch to update data after verification
   } = useGetDocumentDetailsQuery(id);
+
+  // ✅ Handle document update after verification
+  const handleDocumentUpdated = (updatedDocument) => {
+    console.log('Document updated, refetching data...');
+    refetch(); // Refresh the document data
+  };
 
   if (loading) {
     return (
@@ -60,6 +68,11 @@ export default function DocumentDetailPage() {
 
         <div className='space-y-6'>
           <DocsUserInfoCard document={document} />
+          {/* ✅ Add verification card */}
+          <DocsVerificationCard
+            document={document}
+            onDocumentUpdated={handleDocumentUpdated}
+          />
         </div>
       </div>
     </div>

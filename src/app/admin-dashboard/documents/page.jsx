@@ -16,21 +16,21 @@ export default function DocumentsPage() {
     if (documents.length > 0) {
       loadDocuments();
     }
-  }, [documents]); // Load when documents are fetched
+  }, [documents]);
 
   // Filter when type or search changes
   useEffect(() => {
     if (documents.length > 0) {
       loadDocuments();
     }
-  }, [selectedType, searchTerm]); // Only depend on filter values
+  }, [selectedType, searchTerm]);
 
   // Also set initial filtered documents when documents first load
   useEffect(() => {
     if (documents.length > 0 && filteredDocuments.length === 0) {
       setFilteredDocuments(documents);
     }
-  }, [documents]); // Set initial data
+  }, [documents]);
 
   const loadDocuments = async () => {
     const filters = {
@@ -55,13 +55,16 @@ export default function DocumentsPage() {
   const handleSearchChange = (search) => {
     setSearchTerm(search);
   };
+
   console.log('documents length:', documents);
 
   return (
     <div className='space-y-6'>
+      {/* ✅ Pass filtered documents to header for stats */}
       <DocsHeader
         totalDocuments={documents.length}
         filteredCount={filteredDocuments.length}
+        documents={filteredDocuments}
       />
 
       <DocsTable

@@ -69,20 +69,6 @@ export default function DocsInfoCard({ document }) {
               </p>
             </div>
           </div>
-
-          <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
-            <h4 className='text-sm font-semibold text-blue-800 mb-2'>
-              Document Guidelines
-            </h4>
-            <ul className='text-xs text-blue-700 space-y-1'>
-              <li>
-                • Documents are stored securely and accessible only to
-                authorized personnel
-              </li>
-              <li>• Original file quality and format are preserved</li>
-              <li>• All document access is logged for security purposes</li>
-            </ul>
-          </div>
         </div>
       </CardContent>
     </Card>
