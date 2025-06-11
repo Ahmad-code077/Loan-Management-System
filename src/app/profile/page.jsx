@@ -4,7 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useGetProfileQuery } from '@/lib/store/authApi';
-import { FiUser, FiMail, FiCalendar, FiEdit, FiLoader } from 'react-icons/fi';
+import {
+  FiUser,
+  FiMail,
+  FiCalendar,
+  FiEdit,
+  FiLoader,
+  FiEdit3,
+} from 'react-icons/fi';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { data: profile, isLoading, error, refetch } = useGetProfileQuery();
@@ -72,10 +80,12 @@ export default function ProfilePage() {
                     <p className='text-gray-600'>@{profile?.username}</p>
                   </div>
                 </div>
-                <Button variant='outline'>
-                  <FiEdit className='w-4 h-4 mr-2' />
-                  Edit Profile
-                </Button>
+                <Link href='/profile/edit'>
+                  <Button variant='outline' size='sm'>
+                    <FiEdit3 className='w-4 h-4 mr-2' />
+                    Edit Profile
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
           </Card>
@@ -127,138 +137,6 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Account Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className='flex items-center'>
-                <FiCalendar className='w-5 h-5 mr-2 text-green-600' />
-                Account Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                <div className='space-y-1'>
-                  <label className='text-sm font-medium text-gray-500'>
-                    User ID
-                  </label>
-                  <p className='text-lg font-mono'>#{profile?.id}</p>
-                </div>
-
-                <div className='space-y-1'>
-                  <label className='text-sm font-medium text-gray-500'>
-                    Account Status
-                  </label>
-                  <Badge
-                    className={`w-fit ${
-                      profile?.is_active
-                        ? 'bg-green-100 text-green-800 border-green-200'
-                        : 'bg-red-100 text-red-800 border-red-200'
-                    }`}
-                  >
-                    {profile?.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-
-                {profile?.date_joined && (
-                  <div className='space-y-1'>
-                    <label className='text-sm font-medium text-gray-500'>
-                      Member Since
-                    </label>
-                    <p className='text-lg'>
-                      {new Date(profile.date_joined).toLocaleDateString(
-                        'en-US',
-                        {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        }
-                      )}
-                    </p>
-                  </div>
-                )}
-
-                {profile?.last_login && (
-                  <div className='space-y-1'>
-                    <label className='text-sm font-medium text-gray-500'>
-                      Last Login
-                    </label>
-                    <p className='text-lg'>
-                      {new Date(profile.last_login).toLocaleDateString(
-                        'en-US',
-                        {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }
-                      )}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Permissions/Groups (if available) */}
-          {(profile?.groups?.length > 0 ||
-            profile?.user_permissions?.length > 0) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Permissions & Groups</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-4'>
-                  {profile?.groups?.length > 0 && (
-                    <div>
-                      <label className='text-sm font-medium text-gray-500 block mb-2'>
-                        Groups
-                      </label>
-                      <div className='flex flex-wrap gap-2'>
-                        {profile.groups.map((group, index) => (
-                          <Badge key={index} variant='secondary'>
-                            {group.name || group}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {profile?.user_permissions?.length > 0 && (
-                    <div>
-                      <label className='text-sm font-medium text-gray-500 block mb-2'>
-                        Permissions
-                      </label>
-                      <div className='flex flex-wrap gap-2'>
-                        {profile.user_permissions.map((permission, index) => (
-                          <Badge key={index} variant='outline'>
-                            {permission.name || permission}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Debug Information (only show in development) */}
-          {process.env.NODE_ENV === 'development' && (
-            <Card className='border-dashed border-gray-300'>
-              <CardHeader>
-                <CardTitle className='text-gray-500'>
-                  Debug Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <pre className='text-xs bg-gray-100 p-4 rounded overflow-auto max-h-60'>
-                  {JSON.stringify(profile, null, 2)}
-                </pre>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
     </main>
