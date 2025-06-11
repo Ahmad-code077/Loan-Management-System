@@ -35,26 +35,7 @@ export default function UserDetailPage() {
     error: userError,
     refetch: refetchUser,
   } = useGetUserDetailsQuery(id);
-
-  const handleSendEmail = () => {
-    if (!user?.email) {
-      toast({
-        title: 'No Email Address',
-        description: 'This user has no email address on file.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    // Open default email client
-    window.location.href = `mailto:${user.email}`;
-
-    toast({
-      title: 'Email Client Opened',
-      description: `Opening email client to send message to ${user.email}`,
-      variant: 'default',
-    });
-  };
+  console.log('user details:', user);
 
   const handleUserUpdated = (updatedUser) => {
     refetchUser(); // Refetch user data from API
@@ -237,16 +218,7 @@ export default function UserDetailPage() {
             />
             Refresh
           </Button>
-          {user.email && (
-            <Button
-              variant='outline'
-              onClick={handleSendEmail}
-              className='border-border text-foreground hover:bg-accent'
-            >
-              <FiMail className='w-4 h-4 mr-2' />
-              Send Email
-            </Button>
-          )}
+
           <Button
             onClick={() => setShowEditModal(true)}
             className='bg-primary text-primary-foreground hover:bg-primary/90'
@@ -331,16 +303,7 @@ export default function UserDetailPage() {
                 <FiEdit className='w-4 h-4 mr-2' />
                 Edit User Details
               </Button>
-              {user.email && (
-                <Button
-                  variant='outline'
-                  className='w-full border-border text-foreground hover:bg-accent'
-                  onClick={handleSendEmail}
-                >
-                  <FiMail className='w-4 h-4 mr-2' />
-                  Send Email
-                </Button>
-              )}
+
               <Button
                 variant='outline'
                 className='w-full border-border text-destructive hover:bg-destructive/10'

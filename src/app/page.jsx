@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -9,9 +12,178 @@ import {
   FiUsers,
   FiCheckCircle,
   FiArrowRight,
+  FiLoader,
 } from 'react-icons/fi';
+import { useGetUserLoanTypesQuery } from '@/lib/store/authApi';
 
 export default function Home() {
+  const router = useRouter();
+
+  // ✅ Fetch real loan types from API
+  const {
+    data: loanTypesData,
+    isLoading: loanTypesLoading,
+    error: loanTypesError,
+  } = useGetUserLoanTypesQuery();
+
+  console.log('Loan Types Data:', loanTypesData);
+  console.log('Loan Types Loading:', loanTypesLoading);
+  console.log('Loan Types Error:', loanTypesError);
+
+  // ✅ Icon mapping for real loan types
+  const getIconForLoanType = (name) => {
+    const lowerName = name?.toLowerCase() || '';
+    if (lowerName.includes('personal')) return FiUsers;
+    if (lowerName.includes('home') || lowerName.includes('house'))
+      return FiShield;
+    if (lowerName.includes('business') || lowerName.includes('commercial'))
+      return FiTrendingUp;
+    if (lowerName.includes('education') || lowerName.includes('student'))
+      return FiCheckCircle;
+    if (lowerName.includes('car') || lowerName.includes('auto')) return FiClock;
+    // ✅ Default icon for unknown types (like "Shahzaib")
+    return FiDollarSign;
+  };
+
+  // ✅ Color mapping for real loan types
+  const getColorsForLoanType = (index) => {
+    const colors = [
+      {
+        bgColor: 'bg-blue-500/10',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+      },
+      {
+        bgColor: 'bg-green-500/10',
+        iconColor: 'text-green-600 dark:text-green-400',
+      },
+      {
+        bgColor: 'bg-purple-500/10',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+      },
+      {
+        bgColor: 'bg-orange-500/10',
+        iconColor: 'text-orange-600 dark:text-orange-400',
+      },
+      {
+        bgColor: 'bg-red-500/10',
+        iconColor: 'text-red-600 dark:text-red-400',
+      },
+      {
+        bgColor: 'bg-indigo-500/10',
+        iconColor: 'text-indigo-600 dark:text-indigo-400',
+      },
+    ];
+    return colors[index % colors.length];
+  };
+
+  // ✅ Handle loan type card click - redirect to login
+  const handleLoanTypeClick = (loanType) => {
+    console.log('Clicked loan type:', loanType);
+    router.push('/login');
+  };
+
+  // ✅ Transform API data to display format (no fallback)
+  const displayLoanTypes = loanTypesData
+    ? loanTypesData.map((loanType, index) => ({
+        id: loanType.id,
+        name: loanType.name,
+        interest_rate: loanType.interest_rate,
+        icon: getIconForLoanType(loanType.name),
+        ...getColorsForLoanType(index),
+      }))
+    : [];
+
+  // ✅ Loan Types Section Component
+  const LoanTypesSection = () => {
+    if (loanTypesLoading) {
+      return (
+        <section className='py-16'>
+          <div className='text-center mb-12'>
+            <h2 className='text-3xl font-bold text-foreground mb-4'>
+              Loan Types We Offer
+            </h2>
+            <p className='text-muted-foreground text-lg max-w-2xl mx-auto'>
+              Loading our loan products...
+            </p>
+          </div>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+            {[1, 2, 3, 4].map((_, index) => (
+              <Card key={index} className='border-border'>
+                <CardContent className='p-6 text-center'>
+                  <div className='w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4'>
+                    <FiLoader className='w-6 h-6 animate-spin text-muted-foreground' />
+                  </div>
+                  <div className='h-4 bg-muted rounded mb-2'></div>
+                  <div className='h-3 bg-muted rounded w-20 mx-auto'></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    if (loanTypesError || !loanTypesData || loanTypesData.length === 0) {
+      return (
+        <section className='py-16'>
+          <div className='text-center mb-12'>
+            <h2 className='text-3xl font-bold text-foreground mb-4'>
+              Loan Types We Offer
+            </h2>
+            <p className='text-muted-foreground text-lg max-w-2xl mx-auto'>
+              Unable to load loan types at the moment.
+            </p>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section className='py-16'>
+        <div className='text-center mb-12'>
+          <h2 className='text-3xl font-bold text-foreground mb-4'>
+            Loan Types We Offer
+          </h2>
+          <p className='text-muted-foreground text-lg max-w-2xl mx-auto'>
+            Choose from our wide range of loan products designed for your
+            specific needs
+          </p>
+          <p className='text-sm text-muted-foreground mt-2'>
+            Click on any loan type to get started
+          </p>
+        </div>
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+          {displayLoanTypes.map((loan, index) => (
+            <Card
+              key={loan.id}
+              className='border-border hover:shadow-lg transition-all duration-300 hover:scale-105 group cursor-pointer'
+              onClick={() => handleLoanTypeClick(loan)}
+            >
+              <CardContent className='p-6 text-center'>
+                <div
+                  className={`w-12 h-12 ${loan.bgColor} rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}
+                >
+                  <loan.icon className={`w-6 h-6 ${loan.iconColor}`} />
+                </div>
+                <h4 className='font-semibold text-foreground mb-2'>
+                  {loan.name}
+                </h4>
+                <p className='text-primary font-bold'>
+                  {loan.interest_rate}% Interest Rate
+                </p>
+                <div className='mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+                  <p className='text-xs text-muted-foreground'>
+                    Click to apply →
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className='min-h-screen bg-background'>
       {/* Header */}
@@ -150,69 +322,8 @@ export default function Home() {
           </Card>
         </section>
 
-        {/* Loan Types */}
-        <section className='py-16'>
-          <div className='text-center mb-12'>
-            <h2 className='text-3xl font-bold text-foreground mb-4'>
-              Loan Types We Offer
-            </h2>
-            <p className='text-muted-foreground text-lg max-w-2xl mx-auto'>
-              Choose from our wide range of loan products designed for your
-              specific needs
-            </p>
-          </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-            {[
-              {
-                name: 'Personal Loan',
-                rate: '3.99%',
-                icon: FiUsers,
-                bgColor: 'bg-blue-500/10',
-                iconColor: 'text-blue-600 dark:text-blue-400',
-              },
-              {
-                name: 'Home Loan',
-                rate: '4.25%',
-                icon: FiShield,
-                bgColor: 'bg-green-500/10',
-                iconColor: 'text-green-600 dark:text-green-400',
-              },
-              {
-                name: 'Business Loan',
-                rate: '5.49%',
-                icon: FiTrendingUp,
-                bgColor: 'bg-purple-500/10',
-                iconColor: 'text-purple-600 dark:text-purple-400',
-              },
-              {
-                name: 'Education Loan',
-                rate: '3.75%',
-                icon: FiCheckCircle,
-                bgColor: 'bg-orange-500/10',
-                iconColor: 'text-orange-600 dark:text-orange-400',
-              },
-            ].map((loan, index) => (
-              <Card
-                key={index}
-                className='border-border hover:shadow-lg transition-all duration-300 hover:scale-105 group cursor-pointer'
-              >
-                <CardContent className='p-6 text-center'>
-                  <div
-                    className={`w-12 h-12 ${loan.bgColor} rounded-lg flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <loan.icon className={`w-6 h-6 ${loan.iconColor}`} />
-                  </div>
-                  <h4 className='font-semibold text-foreground mb-2'>
-                    {loan.name}
-                  </h4>
-                  <p className='text-primary font-bold'>
-                    Starting at {loan.rate}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
+        {/* ✅ Dynamic Loan Types Section */}
+        <LoanTypesSection />
 
         {/* CTA Section */}
         <section className='py-16'>
@@ -232,16 +343,6 @@ export default function Home() {
                     className='px-8 py-6 text-lg font-semibold bg-background text-foreground hover:bg-background/90'
                   >
                     Apply Now - It&apos;s Free!
-                  </Button>
-                </Link>
-                <Link href='/login'>
-                  <Button
-                    variant='outline'
-                    size='lg'
-                    className='px-8 py-6 text-lg font-semibold border-primary-foreground/20 text-secondary-foreground hover:bg-primary-foreground/10
-                    hover:text-primary-foreground'
-                  >
-                    Sign In
                   </Button>
                 </Link>
               </div>
