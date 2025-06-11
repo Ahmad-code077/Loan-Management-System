@@ -1,19 +1,18 @@
-import { useState } from 'react';
+'use client';
+
 import {
   useGetLoanTypesQuery,
   useAddLoanTypeMutation,
   useUpdateLoanTypeMutation,
   useDeleteLoanTypeMutation,
 } from '@/lib/store/authApi';
-import { toast } from '@/hooks/use-toast';
 
 export const useLoanTypes = () => {
-  const [loading, setLoading] = useState(false);
-
-  // Real API hooks
+  // ✅ Use RTK Query hooks instead of custom implementation
   const {
-    data: loanTypesData = [],
-    isLoading: queryLoading,
+    data: loanTypes = [],
+    isLoading: loading,
+    error,
     refetch,
   } = useGetLoanTypesQuery();
 
@@ -21,102 +20,79 @@ export const useLoanTypes = () => {
   const [updateLoanTypeMutation] = useUpdateLoanTypeMutation();
   const [deleteLoanTypeMutation] = useDeleteLoanTypeMutation();
 
-  const addLoanType = async (newLoanType) => {
-    setLoading(true);
+  // ✅ Add loan type function
+  const addLoanType = async (loanTypeData) => {
     try {
-      const result = await addLoanTypeMutation(newLoanType).unwrap();
+      console.log('Adding loan type:', loanTypeData);
 
-      toast({
-        title: 'Success',
-        description: 'Loan type added successfully.',
-        variant: 'default',
-      });
+      const result = await addLoanTypeMutation(loanTypeData).unwrap();
+      console.log('Add loan type success:', result);
 
-      // Refetch to get updated list
-      await refetch();
-
-      return { success: true, data: result };
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
       console.error('Add loan type error:', error);
-
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to add loan type.',
-        variant: 'destructive',
-      });
-
-      return { success: false, error: error?.data?.message || error.message };
-    } finally {
-      setLoading(false);
+      return {
+        success: false,
+        error: error,
+      };
     }
   };
 
-  const updateLoanType = async (id, updatedLoanType) => {
-    setLoading(true);
+  // ✅ FIXED: Update loan type function - match endpoint parameter names
+  const updateLoanType = async (id, loanTypeData) => {
     try {
+      console.log('Updating loan type with ID:', id);
+      console.log('Update data:', loanTypeData);
+
+      // ✅ FIX: Use 'loanType' instead of 'loanTypeData' to match endpoint
       const result = await updateLoanTypeMutation({
-        id,
-        ...updatedLoanType,
+        id: id,
+        loanType: loanTypeData, // ✅ Changed from 'loanTypeData' to 'loanType'
       }).unwrap();
 
-      toast({
-        title: 'Success',
-        description: 'Loan type updated successfully.',
-        variant: 'default',
-      });
+      console.log('Update loan type success:', result);
 
-      // Refetch to get updated list
-      await refetch();
-
-      return { success: true, data: result };
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
       console.error('Update loan type error:', error);
-
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to update loan type.',
-        variant: 'destructive',
-      });
-
-      return { success: false, error: error?.data?.message || error.message };
-    } finally {
-      setLoading(false);
+      return {
+        success: false,
+        error: error,
+      };
     }
   };
 
+  // ✅ Delete loan type function
   const deleteLoanType = async (id) => {
-    setLoading(true);
     try {
-      await deleteLoanTypeMutation(id).unwrap();
+      console.log('Deleting loan type with ID:', id);
 
-      toast({
-        title: 'Success',
-        description: 'Loan type deleted successfully.',
-        variant: 'default',
-      });
+      const result = await deleteLoanTypeMutation(id).unwrap();
+      console.log('Delete loan type success:', result);
 
-      // Refetch to get updated list
-      await refetch();
-
-      return { success: true };
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
       console.error('Delete loan type error:', error);
-
-      toast({
-        title: 'Error',
-        description: error?.data?.message || 'Failed to delete loan type.',
-        variant: 'destructive',
-      });
-
-      return { success: false, error: error?.data?.message || error.message };
-    } finally {
-      setLoading(false);
+      return {
+        success: false,
+        error: error,
+      };
     }
   };
 
   return {
-    loanTypes: loanTypesData,
-    loading: loading || queryLoading,
+    loanTypes,
+    loading,
+    error,
     addLoanType,
     updateLoanType,
     deleteLoanType,

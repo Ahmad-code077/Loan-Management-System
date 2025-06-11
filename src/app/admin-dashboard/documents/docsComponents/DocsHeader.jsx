@@ -15,16 +15,6 @@ export default function DocsHeader({ totalDocuments, filteredCount }) {
             : ` (${totalDocuments} documents)`}
         </p>
       </div>
-      <div className='flex space-x-2'>
-        <Button variant='outline' className='border-border'>
-          <FiDownload className='w-4 h-4 mr-2' />
-          Export
-        </Button>
-        <Button variant='outline' className='border-border'>
-          <FiFileText className='w-4 h-4 mr-2' />
-          Generate Report
-        </Button>
-      </div>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export default function LoanTypesPage() {
     setSelectedLoanType(null);
   };
 
-  // Handle successful operations
+  // ✅ Handle successful operations
   const handleAddSuccess = async (newLoanType) => {
     const result = await addLoanType(newLoanType);
     if (result.success) {
@@ -42,6 +42,7 @@ export default function LoanTypesPage() {
     return result;
   };
 
+  // ✅ Fix update function - only pass the data, not the ID separately
   const handleUpdateSuccess = async (updatedData) => {
     const result = await updateLoanType(selectedLoanType.id, updatedData);
     if (result.success) {

@@ -1,60 +1,64 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/icons';
 import AuthLayout from './AuthLayout';
 import { useToast } from '@/hooks/use-toast';
+import { usePasswordResetMutation } from '@/lib/store/authApi';
 
 export default function ForgotPasswordForm() {
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  // ✅ Use RTK Query mutation instead of custom fetch
+  const [passwordReset, { isLoading }] = usePasswordResetMutation();
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm();
 
   const onSubmit = async (data) => {
-    setIsLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/password-reset/`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data),
-        }
-      );
+      console.log('Sending password reset for:', data.email);
 
-      if (response.ok) {
-        toast({
-          title: 'Reset Email Sent',
-          description:
-            'Please check your email for password reset instructions.',
-          variant: 'default',
-        });
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'Failed to Send Reset Email',
-          description: error.detail || 'Please try again later.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to request password reset:', error);
+      // ✅ Use the RTK Query mutation
+      const result = await passwordReset(data).unwrap();
+
+      console.log('Password reset sent successfully:', result);
+
       toast({
-        title: 'Error',
-        description: 'Failed to send reset email. Please try again later.',
+        title: 'Reset Email Sent ✅',
+        description: 'Please check your email for password reset instructions.',
+        variant: 'default',
+      });
+
+      // ✅ Clear the form after successful submission
+      reset();
+    } catch (error) {
+      console.error('Password reset failed:', error);
+
+      // ✅ Handle specific error messages
+      let errorMessage = 'Failed to send reset email. Please try again later.';
+
+      if (error?.data?.email) {
+        errorMessage = `Email: ${error.data.email[0]}`;
+      } else if (error?.data?.detail) {
+        errorMessage = error.data.detail;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error?.data?.non_field_errors) {
+        errorMessage = error.data.non_field_errors[0];
+      }
+
+      toast({
+        title: 'Reset Failed ❌',
+        description: errorMessage,
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -76,6 +80,7 @@ export default function ForgotPasswordForm() {
             })}
             placeholder='Email address'
             className='w-full'
+            disabled={isLoading}
           />
           {errors.email && (
             <span className='text-sm text-destructive'>
@@ -88,6 +93,20 @@ export default function ForgotPasswordForm() {
           {isLoading && <Icons.spinner className='mr-2 h-4 w-4 animate-spin' />}
           {isLoading ? 'Sending instructions...' : 'Send reset instructions'}
         </Button>
+
+        {/* ✅ Additional help text */}
+        <div className='text-center'>
+          <p className='text-sm text-muted-foreground'>
+            Don&apos;t receive an email? Check your spam folder or{' '}
+            <button
+              type='button'
+              className='text-primary hover:underline'
+              onClick={() => window.location.reload()}
+            >
+              try again
+            </button>
+          </p>
+        </div>
       </form>
     </AuthLayout>
   );

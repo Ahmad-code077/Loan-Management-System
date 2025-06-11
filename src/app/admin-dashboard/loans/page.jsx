@@ -236,10 +236,6 @@ export default function LoansPage() {
             />
             Refresh
           </Button>
-          <Button variant='outline' className='border-border'>
-            <FiDollarSign className='w-4 h-4 mr-2' />
-            Export
-          </Button>
         </div>
       </div>
 

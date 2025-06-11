@@ -13,10 +13,6 @@ export default function LoanTypesHeader({ onAddNew, totalTypes }) {
         </p>
       </div>
       <div className='flex space-x-2'>
-        <Button variant='outline' className='border-border'>
-          <FiDownload className='w-4 h-4 mr-2' />
-          Export
-        </Button>
         <Button onClick={onAddNew} className='bg-primary hover:bg-primary/90'>
           <FiPlus className='w-4 h-4 mr-2' />
           Add Loan Type

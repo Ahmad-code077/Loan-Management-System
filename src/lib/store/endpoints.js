@@ -254,12 +254,13 @@ export const endpoints = (builder) => ({
   }),
 
   updateLoanType: builder.mutation({
-    query: ({ id, ...loanType }) => ({
+    query: ({ id, loanType }) => ({
       url: `/api/admin/loan-type/${id}/`,
       method: 'PUT',
       body: loanType,
     }),
     invalidatesTags: (result, error, { id }) => [
+      { type: 'LoanType' },
       { type: 'LoanType', id },
       { type: 'LoanType', id: 'LIST' },
     ],
