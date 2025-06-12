@@ -23,12 +23,12 @@ export default function ForgotPasswordForm() {
 
   const onSubmit = async (data) => {
     try {
-      console.log('Sending password reset for:', data.email);
+      console.log('🔄 Starting password reset for:', data.email);
 
       // ✅ Use the RTK Query mutation
       const result = await passwordReset(data).unwrap();
 
-      console.log('Password reset sent successfully:', result);
+      console.log('✅ Password reset sent successfully:', result);
 
       toast({
         title: 'Reset Email Sent ✅',
@@ -39,20 +39,60 @@ export default function ForgotPasswordForm() {
       // ✅ Clear the form after successful submission
       reset();
     } catch (error) {
-      console.error('Password reset failed:', error);
+      // ✅ Enhanced debug logging
+      console.log('❌ Password reset failed - Full error object:');
+      console.log('Error:', error);
+      console.log('Error status:', error?.status);
+      console.log('Error data:', error?.data);
+      console.log('Error message paths:');
+      console.log('  - error.data?.error:', error?.data?.error);
+      console.log('  - error.data?.detail:', error?.data?.detail);
+      console.log('  - error.data?.message:', error?.data?.message);
+      console.log('  - error.data?.email:', error?.data?.email);
+      console.log(
+        '  - error.data?.non_field_errors:',
+        error?.data?.non_field_errors
+      );
 
-      // ✅ Handle specific error messages
+      // ✅ Simple error handling - show backend error directly
       let errorMessage = 'Failed to send reset email. Please try again later.';
 
-      if (error?.data?.email) {
-        errorMessage = `Email: ${error.data.email[0]}`;
+      // ✅ Extract error message from backend response
+      if (error?.data?.error) {
+        console.log('✅ Using error.data.error:', error.data.error);
+        errorMessage = error.data.error;
       } else if (error?.data?.detail) {
+        console.log('✅ Using error.data.detail:', error.data.detail);
         errorMessage = error.data.detail;
       } else if (error?.data?.message) {
+        console.log('✅ Using error.data.message:', error.data.message);
         errorMessage = error.data.message;
-      } else if (error?.data?.non_field_errors) {
+      } else if (error?.data?.email && Array.isArray(error.data.email)) {
+        console.log('✅ Using error.data.email[0]:', error.data.email[0]);
+        errorMessage = error.data.email[0];
+      } else if (error?.data?.email) {
+        console.log('✅ Using error.data.email:', error.data.email);
+        errorMessage = error.data.email;
+      } else if (
+        error?.data?.non_field_errors &&
+        Array.isArray(error.data.non_field_errors)
+      ) {
+        console.log(
+          '✅ Using error.data.non_field_errors[0]:',
+          error.data.non_field_errors[0]
+        );
         errorMessage = error.data.non_field_errors[0];
+      } else if (error?.data?.non_field_errors) {
+        console.log(
+          '✅ Using error.data.non_field_errors:',
+          error.data.non_field_errors
+        );
+        errorMessage = error.data.non_field_errors;
+      } else {
+        console.log('⚠️ Using fallback error message');
       }
+
+      console.log('📢 Final error message to show:', errorMessage);
 
       toast({
         title: 'Reset Failed ❌',
@@ -94,8 +134,8 @@ export default function ForgotPasswordForm() {
           {isLoading ? 'Sending instructions...' : 'Send reset instructions'}
         </Button>
 
-        {/* ✅ Additional help text */}
-        <div className='text-center'>
+        {/* ✅ Simple help text */}
+        <div className='text-center space-y-2'>
           <p className='text-sm text-muted-foreground'>
             Don&apos;t receive an email? Check your spam folder or{' '}
             <button
@@ -105,6 +145,16 @@ export default function ForgotPasswordForm() {
             >
               try again
             </button>
+          </p>
+
+          <p className='text-sm text-muted-foreground'>
+            Don&apos;t have an account?{' '}
+            <a
+              href='/register'
+              className='text-primary hover:underline font-medium'
+            >
+              Create one here
+            </a>
           </p>
         </div>
       </form>

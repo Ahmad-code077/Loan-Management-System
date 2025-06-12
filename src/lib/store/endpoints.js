@@ -72,12 +72,11 @@ export const endpoints = (builder) => ({
   // ===== PASSWORD RESET ENDPOINTS =====
   passwordReset: builder.mutation({
     query: (data) => ({
-      url: '/password-reset/',
+      url: '/password-reset/', // ✅ Make sure this matches your API
       method: 'POST',
-      body: data,
+      body: data, // ✅ Should be { email: "user@example.com" }
     }),
   }),
-
   passwordResetConfirm: builder.mutation({
     query: ({ uidb64, token, ...data }) => ({
       url: `/password-reset-confirm/${uidb64}/${token}/`,
